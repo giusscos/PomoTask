@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct TomaTaskList: View {
+struct TomaTasksList: View {
     @Environment(ModelData.self) var modelData
     
     var tonaTasks: [TomaTask] {
@@ -58,6 +58,6 @@ struct TomaTaskList: View {
 }
 
 #Preview {
-    TomaTaskList()
-        .environment(ModelData())
+    TomaTasksList()
+        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
 }

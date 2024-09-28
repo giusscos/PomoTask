@@ -11,7 +11,7 @@ struct CreateTask: View {
     @Environment(ModelData.self) var modelData
     
     @State var title: String = ""
-    @State var description: String = ""
+    @State var desc: String = ""
     @State var category: TomaTask.Category = TomaTask.Category.study
     @State var status: TomaTask.Status = TomaTask.Status.alien
     @State var maxDuration: Int = 25
@@ -72,7 +72,7 @@ struct CreateTask: View {
                     Text("Task description")
                     
                     
-                    TextField("Description", text: $description, axis: .vertical)
+                    TextField("Description", text: $desc, axis: .vertical)
                         .lineLimit(...2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
@@ -144,13 +144,13 @@ struct CreateTask: View {
     private func addTomaTask () {
         modelData.addTask(
             title: title,
-            description: description,
+            desc: desc,
             maxDuration: maxDuration,
             pauseDuration: pauseDuration,
             repetition: repetition,
             tasks: tasks,
             category: category,
-            status: .rocket
+            status: status
         )
         
         cancelChange = !cancelChange
@@ -159,5 +159,5 @@ struct CreateTask: View {
 
 #Preview {
     CreateTask(cancelChange: .constant(true))
-        .environment(ModelData())
+        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
 }

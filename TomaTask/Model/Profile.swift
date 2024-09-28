@@ -6,10 +6,17 @@
 //
 
 import Foundation
+import SwiftData
 
-struct Profile {
+@Model
+class Profile {
     var username: String
     var prefersNotifications = true
     
-    static let `default` = Profile(username: "user")
+    init(username: String = "user", prefersNotifications: Bool = true) {
+        self.username = username
+        self.prefersNotifications = prefersNotifications
+    }
+    
+    static var `default` = Profile(username: "user")
 }

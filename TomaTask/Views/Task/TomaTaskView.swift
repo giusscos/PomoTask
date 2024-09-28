@@ -29,5 +29,5 @@ struct TomaTaskView: View {
 }
 
 #Preview {
-    TomaTaskView(task: TomaTask.default)
+    TomaTaskView(task: TomaTask())
 }

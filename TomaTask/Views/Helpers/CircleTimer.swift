@@ -91,7 +91,7 @@ struct CircleTimer: View {
 }
 
 #Preview {
-    let task = TomaTask.default
+    let task = TomaTask()
     
     return Group{
         CircleTimer(task: task, time: task.maxDuration)

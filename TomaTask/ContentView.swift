@@ -9,11 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        TomaTaskList()
+        TomaTasksList()
     }
 }
 
 #Preview {
     ContentView()
-        .environment(ModelData())
+        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
 }

@@ -7,12 +7,12 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 
-struct TomaTask: Hashable, Codable, Identifiable  {
-    
-    var id: String
+@Model
+class TomaTask  {
     var title: String
-    var description: String
+    var desc: String
     var maxDuration: TimeInterval
     var pauseDuration: TimeInterval
     var repetition: Int
@@ -38,29 +38,33 @@ struct TomaTask: Hashable, Codable, Identifiable  {
         var id: String { rawValue }
     }
     
-    static let `default` = TomaTask(
-                id: UUID().uuidString,
-                title: "TomaTask example",
-                description: "A standard pomodoro timer with a 25 minute work session and a 5 minute break session",
-                maxDuration: 25 * 60,
-                pauseDuration: 5 * 60,
-                repetition: 4,
-                tasks: [SubTask(text: "Read"),
-                        SubTask(text: "Write"),
-                        SubTask(text: "Review"),
-                        SubTask(text: "Deploy")],
-                category: TomaTask.Category.work,
-                status: TomaTask.Status.rocket
-            )
+    init(
+        title: String = "TomaTask example",
+        desc: String = "A standard pomodoro timer with a 25 minute work session and a 5 minute break session",
+        maxDuration: TimeInterval = 25 * 60,
+        pauseDuration: TimeInterval = 5 * 60,
+        repetition: Int = 4,
+        tasks: [SubTask] = [],
+        category: Category = Category.work,
+        status: Status = Status.rocket
+    ) {
+        self.title = title
+        self.desc = desc
+        self.maxDuration = maxDuration
+        self.pauseDuration = pauseDuration
+        self.repetition = repetition
+        self.tasks = tasks
+        self.category = category
+        self.status = status
+    }
 }
 
-struct SubTask: Hashable, Codable, Equatable, Identifiable {
-    var id: String = UUID().uuidString
+@Model
+class SubTask {
     var text: String
-    var isCompleted: Bool = false
+    var isCompleted: Bool
     
-    init(id: String = UUID().uuidString, text: String, isCompleted: Bool = false) {
-        self.id = id
+    init(text: String, isCompleted: Bool = false) {
         self.text = text
         self.isCompleted = isCompleted
     }

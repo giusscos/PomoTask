@@ -6,29 +6,18 @@
 //
 
 import Foundation
+import SwiftData
 
+@Model
 @Observable
 class ModelData {
+    var tomaTasks: [TomaTask]
+    var profile: Profile
     
-    var tomaTasks: [TomaTask] = [TomaTask.default]
-//    [
-//        TomaTask(
-//            id: UUID().uuidString,
-//            title: "TomaTask example",
-//            description: "A standard pomodoro timer with a 25 minute work session and a 5 minute break session",
-//            maxDuration: 25 * 60,
-//            pauseDuration: 5 * 60,
-//            repetition: 4,
-//            tasks: [SubTask(text: "Read"),
-//                    SubTask(text: "Write"),
-//                    SubTask(text: "Review"),
-//                    SubTask(text: "Deploy")],
-//            category: TomaTask.Category.work,
-//            status: TomaTask.Status.rocket
-//        )
-//    ]
-    
-    var profile = Profile.default
+    init(tomaTasks: [TomaTask], profile: Profile) {
+        self.tomaTasks = tomaTasks
+        self.profile = profile
+    }
     
     var categories: [String: [TomaTask]] {
         Dictionary(
@@ -46,7 +35,7 @@ class ModelData {
     
     func addTask(
         title: String,
-        description: String,
+        desc: String,
         maxDuration: Int,
         pauseDuration: Int,
         repetition: Int,
@@ -55,9 +44,8 @@ class ModelData {
         status: TomaTask.Status
     ) {
         let newTask = TomaTask(
-            id: UUID().uuidString,
             title: title,
-            description: description,
+            desc: desc,
             maxDuration: Double(maxDuration * 60),
             pauseDuration: Double(pauseDuration * 60),
             repetition: repetition,

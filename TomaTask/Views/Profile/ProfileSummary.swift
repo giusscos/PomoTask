@@ -29,5 +29,5 @@ struct ProfileSummary: View {
 
 #Preview {
     ProfileSummary(profile: Profile.default)
-        .environment(ModelData())
+        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
 }

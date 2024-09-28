@@ -46,5 +46,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
-        .environment(ModelData())
+        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
 }

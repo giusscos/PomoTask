@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct TomaTaskApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(ModelData())
+                .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
         }
     }
 }

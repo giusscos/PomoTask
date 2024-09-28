@@ -18,7 +18,7 @@ struct TaskRow: View {
             VStack (alignment: .leading) {
                 Text(task.title)
                     .font(.headline)
-                Text(task.description)
+                Text(task.desc)
                     .font(.subheadline)
             }
         }
@@ -26,5 +26,5 @@ struct TaskRow: View {
 }
 
 #Preview {
-    TaskRow(task: TomaTask.default)
+    TaskRow(task: TomaTask())
 }
