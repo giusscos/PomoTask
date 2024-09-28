@@ -26,9 +26,5 @@ struct TaskRow: View {
 }
 
 #Preview {
-    let tasks = ModelData().tomaTasks
-    
-    return Group{
-        TaskRow(task: tasks[0])
-    }
+    TaskRow(task: TomaTask.default)
 }

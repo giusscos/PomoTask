@@ -29,5 +29,5 @@ struct TomaTaskView: View {
 }
 
 #Preview {
-    TomaTaskView(task: ModelData().tomaTasks.first!)
+    TomaTaskView(task: TomaTask.default)
 }

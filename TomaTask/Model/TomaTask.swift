@@ -37,6 +37,21 @@ struct TomaTask: Hashable, Codable, Identifiable  {
         
         var id: String { rawValue }
     }
+    
+    static let `default` = TomaTask(
+                id: UUID().uuidString,
+                title: "TomaTask example",
+                description: "A standard pomodoro timer with a 25 minute work session and a 5 minute break session",
+                maxDuration: 25 * 60,
+                pauseDuration: 5 * 60,
+                repetition: 4,
+                tasks: [SubTask(text: "Read"),
+                        SubTask(text: "Write"),
+                        SubTask(text: "Review"),
+                        SubTask(text: "Deploy")],
+                category: TomaTask.Category.work,
+                status: TomaTask.Status.rocket
+            )
 }
 
 struct SubTask: Hashable, Codable, Equatable, Identifiable {
