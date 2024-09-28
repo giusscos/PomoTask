@@ -8,13 +8,12 @@
 import Foundation
 import SwiftData
 
-@Model
 @Observable
 class ModelData {
     var tomaTasks: [TomaTask]
     var profile: Profile
     
-    init(tomaTasks: [TomaTask], profile: Profile) {
+    init(tomaTasks: [TomaTask] = [TomaTask()], profile: Profile = Profile()) {
         self.tomaTasks = tomaTasks
         self.profile = profile
     }
