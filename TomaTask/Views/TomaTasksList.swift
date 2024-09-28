@@ -6,13 +6,13 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TomaTasksList: View {
+    @Environment(\.modelContext) var context
     @Environment(ModelData.self) var modelData
     
-    var tonaTasks: [TomaTask] {
-        modelData.tomaTasks
-    }
+    @Query private var tomaTasks: [TomaTask]
     
     @State private var showingProfile = false
     
@@ -27,11 +27,16 @@ struct TomaTasksList: View {
                     Label("Add TomaTask", systemImage: "plus")
                 }
                 
-                ForEach(tonaTasks) { task in
+                ForEach(tomaTasks) { task in
                     NavigationLink {
                         TomaTaskView(task: task)
                     } label: {
                         TaskRow(task: task)
+                    }
+                }.onDelete { indexes in
+                    for index in indexes {
+                        let task = tomaTasks[index]
+                        deleteTask(item: task)
                     }
                 }
             }
@@ -54,6 +59,10 @@ struct TomaTasksList: View {
         } detail: {
             Text("Select a TomaTask")
         }
+    }
+    
+    private func deleteTask(item: TomaTask) {
+        context.delete(item)
     }
 }
 

@@ -15,5 +15,6 @@ struct TomaTaskApp: App {
             ContentView()
                 .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
         }
+        .modelContainer(for: Storage.self)
     }
 }

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CreateTask: View {
+    @Environment(\.modelContext) var context
     @Environment(ModelData.self) var modelData
     
     @State var title: String = ""
@@ -151,6 +152,18 @@ struct CreateTask: View {
             tasks: tasks,
             category: category,
             status: status
+        )
+        
+        context.insert(TomaTask(
+            title: title,
+            desc: desc,
+            maxDuration: TimeInterval(maxDuration * 60),
+            pauseDuration: TimeInterval(pauseDuration * 60),
+            repetition: repetition,
+            tasks: tasks,
+            category: category,
+            status: status
+            )
         )
         
         cancelChange = !cancelChange
