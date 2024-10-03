@@ -8,43 +8,37 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @Environment(\.presentationMode) var presentationMode
     @Environment(\.editMode) var editMode
     @Environment(ModelData.self) var modelData
     
-    @State private var draftProfile = Profile.default
+    @State private var draftProfile = Profile()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
-                if editMode?.wrappedValue == .active {
-                    Button("Cancel", role: .cancel) {
-                        draftProfile = modelData.profile
-                        editMode?.animation().wrappedValue = .inactive
-                    }
+                Button("Back", systemImage: "chevron.left") {
+                    presentationMode.wrappedValue.dismiss()
                 }
-                
+                    
                 Spacer()
-                
-                EditButton()
             }
             
-            if editMode?.wrappedValue == .inactive {
-                ProfileSummary(profile: modelData.profile)
-            } else {
-                ProfileEditor(profile: $draftProfile)
-                    .onAppear {
-                        draftProfile = modelData.profile
-                    }
-                    .onDisappear {
-                        modelData.profile = draftProfile
-                    }
+            ProfileEditor(profile: $draftProfile)
+                .onAppear {
+                    draftProfile = Profile()
+                }
+                .onDisappear {
+                    modelData.profile = draftProfile
+                }
             }
-        }
         .padding()
+        
+        Spacer()
     }
 }
 
 #Preview {
     ProfileView()
-        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
+        .environment(ModelData())
 }

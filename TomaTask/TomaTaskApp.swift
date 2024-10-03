@@ -12,8 +12,8 @@ import SwiftData
 struct TomaTaskApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
+            TomaTasksList()
+                .environment(ModelData())
         }
         .modelContainer(for: Storage.self)
     }

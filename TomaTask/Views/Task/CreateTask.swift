@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct CreateTask: View {
+    @Environment(\.presentationMode) var presentationMode
     @Environment(\.modelContext) var context
-    @Environment(ModelData.self) var modelData
     
     @State var title: String = ""
     @State var desc: String = ""
@@ -21,13 +21,12 @@ struct CreateTask: View {
     @State var tasks: [SubTask] = []
     @State var newSubTask: String = ""
     
-    @Binding var cancelChange: Bool
-    
     var body: some View {
         VStack {
             HStack {
                 Button("Cancel", role: .cancel) {
-                    cancelChange = !cancelChange
+                    defaultTask()
+                    presentationMode.wrappedValue.dismiss()
                 }
                 
                 Spacer()
@@ -39,8 +38,8 @@ struct CreateTask: View {
             
             List {
                 VStack(alignment: .leading) {
-                    Text("Category Task")
-                    Picker("Category Task", selection: $category) {
+                    Text("Category")
+                    Picker("Category", selection: $category) {
                         ForEach(TomaTask.Category.allCases) { season in
                             Text(season.rawValue).tag(season)
                         }
@@ -50,8 +49,8 @@ struct CreateTask: View {
                 }
                 
                 VStack(alignment: .leading) {
-                    Text("Icon Task")
-                    Picker("Icon Task", selection: $status) {
+                    Text("Icon")
+                    Picker("Icon", selection: $status) {
                         ForEach(TomaTask.Status.allCases) { season in
                             Text(season.rawValue).tag(season)
                         }
@@ -60,25 +59,14 @@ struct CreateTask: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 
-                HStack {
-                    Text("Task name")
-                    
-                    Spacer()
-                    
-                    TextField("Title", text: $title)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                }
-                VStack(alignment: .leading) {
-                    Text("Task description")
-                    
-                    
-                    TextField("Description", text: $desc, axis: .vertical)
-                        .lineLimit(...2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                        .padding(.bottom)
-                }
+               TextField("Title", text: $title)
+                    .foregroundStyle(.secondary)
+                
+                TextField("Description", text: $desc, axis: .vertical)
+                    .lineLimit(...2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                
                 HStack {
                     VStack(alignment: .center, spacing: 0) {
                         Text("Tasks duration")
@@ -93,7 +81,7 @@ struct CreateTask: View {
                     VStack(alignment: .center, spacing: 0) {
                         Text("Pause duration")
                         Picker("Pause duration", selection: $pauseDuration) {
-                            ForEach(0..<61) { minute in
+                            ForEach(1..<61) { minute in
                                 Text("\(minute) min").tag(minute)
                             }
                         }
@@ -103,15 +91,19 @@ struct CreateTask: View {
                 
                 VStack(alignment: .center, spacing: 0) {
                     Picker("Pomodoro repetition", selection: $repetition) {
-                        ForEach(0..<10) { minute in
-                            Text("\(minute) times").tag(minute)
+                        ForEach(1..<10) { rep in
+                            Text("\(rep) \(rep == 1 ? "time" : "times")").tag(rep)
                         }
                     }
                 }
                 
                 if(tasks.count > 0) {
+                    Text("SubTasks")
+                        .fontWeight(.semibold)
+                    
                     ForEach(tasks) { task in
                         Text(task.text)
+                            .padding(.horizontal)
                     }
                     .onDelete(perform: deleteTask)
                 }
@@ -121,13 +113,25 @@ struct CreateTask: View {
                     
                     Spacer()
                     
-                    TextField("SubTask name", text: $newSubTask)
+                    TextField("SubTask title", text: $newSubTask)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.trailing)
                 }
             }
         }
         .animation(.easeInOut, value: tasks)
+    }
+    
+    private func defaultTask () {
+        title = ""
+        desc = ""
+        category = TomaTask.Category.study
+        status = TomaTask.Status.alien
+        maxDuration = 25
+        pauseDuration = 5
+        repetition = 4
+        tasks = []
+        newSubTask = ""
     }
     
     private func addSubTask () {
@@ -142,18 +146,7 @@ struct CreateTask: View {
         tasks.remove(atOffsets: offsets)
     }
     
-    private func addTomaTask () {
-        modelData.addTask(
-            title: title,
-            desc: desc,
-            maxDuration: maxDuration,
-            pauseDuration: pauseDuration,
-            repetition: repetition,
-            tasks: tasks,
-            category: category,
-            status: status
-        )
-        
+    private func addTomaTask () {        
         context.insert(TomaTask(
             title: title,
             desc: desc,
@@ -166,11 +159,10 @@ struct CreateTask: View {
             )
         )
         
-        cancelChange = !cancelChange
+        presentationMode.wrappedValue.dismiss()
     }
 }
 
 #Preview {
-    CreateTask(cancelChange: .constant(true))
-        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
+    CreateTask()
 }

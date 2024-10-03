@@ -10,13 +10,11 @@ import SwiftData
 
 @Model
 class Profile {
-    var username: String
     var prefersNotifications = true
+    var lockApp = false
     
-    init(username: String = "user", prefersNotifications: Bool = true) {
-        self.username = username
+    init(prefersNotifications: Bool = true, lockApp: Bool = false) {
         self.prefersNotifications = prefersNotifications
+        self.lockApp = lockApp
     }
-    
-    static var `default` = Profile(username: "user")
 }

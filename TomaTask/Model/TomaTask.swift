@@ -44,7 +44,7 @@ class TomaTask  {
         maxDuration: TimeInterval = 25 * 60,
         pauseDuration: TimeInterval = 5 * 60,
         repetition: Int = 4,
-        tasks: [SubTask] = [],
+        tasks: [SubTask] = [SubTask(text: "SubTomaTask 1", isCompleted: false)],
         category: Category = Category.work,
         status: Status = Status.rocket
     ) {

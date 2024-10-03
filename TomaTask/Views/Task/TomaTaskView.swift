@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TomaTaskView: View {
-    var task: TomaTask
+    @State var task: TomaTask
     
     var body: some View {
         VStack {

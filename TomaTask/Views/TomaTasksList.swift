@@ -10,7 +10,6 @@ import SwiftData
 
 struct TomaTasksList: View {
     @Environment(\.modelContext) var context
-    @Environment(ModelData.self) var modelData
     
     @Query private var tomaTasks: [TomaTask]
     
@@ -19,7 +18,7 @@ struct TomaTasksList: View {
     @State private var showingAddTomaTask = false
     
     var body: some View {
-        NavigationSplitView{
+        NavigationSplitView {
             List {
                 Button {
                     showingAddTomaTask.toggle()
@@ -45,16 +44,14 @@ struct TomaTasksList: View {
                 Button {
                     showingProfile.toggle()
                 } label: {
-                    Label("User Profile", systemImage: "person.crop.circle")
+                    Label("Settings", systemImage: "gear")
                 }
             }
-            .sheet(isPresented: $showingProfile) {
+            .fullScreenCover(isPresented: $showingProfile, content: {
                 ProfileView()
-                    .environment(modelData)
-            }
+            })
             .sheet(isPresented: $showingAddTomaTask) {
-                CreateTask(cancelChange: $showingAddTomaTask)
-                    .environment(modelData)
+                CreateTask()
             }
         } detail: {
             Text("Select a TomaTask")
@@ -68,5 +65,5 @@ struct TomaTasksList: View {
 
 #Preview {
     TomaTasksList()
-        .environment(ModelData(tomaTasks: [TomaTask()], profile: Profile()))
+        .environment(ModelData())
 }

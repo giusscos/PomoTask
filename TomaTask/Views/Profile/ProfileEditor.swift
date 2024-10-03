@@ -11,23 +11,18 @@ struct ProfileEditor: View {
     @Binding var profile: Profile
     
     var body: some View {
-        List {
-            HStack {
-                Text("Username")
-                Spacer()
-                TextField("Username", text: $profile.username)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
-                
-            }
-            
+        VStack {
             Toggle(isOn: $profile.prefersNotifications) {
                 Text("Enable Notifications")
+            }
+            
+            Toggle(isOn: $profile.lockApp) {
+                Text("Enable Lock app")
             }
         }
     }
 }
 
 #Preview {
-    ProfileEditor(profile: .constant(.default))
+    ProfileEditor(profile: .constant(Profile()))
 }
