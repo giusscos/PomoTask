@@ -6,39 +6,65 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ProfileView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @Environment(\.editMode) var editMode
-    @Environment(ModelData.self) var modelData
+    @Environment(\.modelContext) var modelContext
     
-    @State private var draftProfile = Profile()
+    @Query private var profile: [Profile] = [Profile()]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Button("Back", systemImage: "chevron.left") {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
                     
                 Spacer()
             }
             
-            ProfileEditor(profile: $draftProfile)
-                .onAppear {
-                    draftProfile = Profile()
+            Form {
+                TextField("Name", text: Binding(
+                    get: { profile[0].userName },
+                    set: { newValue in
+                        profile[0].userName = newValue
+                        saveChanges()
+                    }
+                ))
+                
+                Toggle(isOn: Binding(
+                    get: { profile[0].prefersNotifications },
+                    set: { newValue in
+                        profile[0].prefersNotifications = newValue
+                        saveChanges()
+                    }
+                )) {
+                    Text("Enable Notifications")
                 }
-                .onDisappear {
-                    modelData.profile = draftProfile
+                
+                Toggle(isOn: Binding(
+                    get: { profile[0].lockApp },
+                    set: { newValue in
+                        profile[0].lockApp = newValue
+                        saveChanges()
+                    }
+                )) {
+                    Text("Enable Lock app")
                 }
             }
+        }
         .padding()
         
         Spacer()
+    }
+    
+    private func saveChanges() {
+        try? modelContext.save()
     }
 }
 
 #Preview {
     ProfileView()
-        .environment(ModelData())
 }

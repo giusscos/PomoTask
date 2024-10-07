@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CreateTask: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) var context
     
     @State var title: String = ""
@@ -26,7 +26,7 @@ struct CreateTask: View {
             HStack {
                 Button("Cancel", role: .cancel) {
                     defaultTask()
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
                 
                 Spacer()
@@ -36,7 +36,7 @@ struct CreateTask: View {
                 })
             }.padding()
             
-            List {
+            Form {
                 VStack(alignment: .leading) {
                     Text("Category")
                     Picker("Category", selection: $category) {
@@ -90,11 +90,11 @@ struct CreateTask: View {
                 }
                 
                 VStack(alignment: .center, spacing: 0) {
-                    Picker("Pomodoro repetition", selection: $repetition) {
-                        ForEach(1..<10) { rep in
-                            Text("\(rep) \(rep == 1 ? "time" : "times")").tag(rep)
-                        }
-                    }
+                    Stepper(
+                        "Reapeat \(repetition) \(repetition == 1 ? "time" : "times")",
+                        value: $repetition,
+                        in: 1...10
+                    )
                 }
                 
                 if(tasks.count > 0) {
@@ -159,7 +159,7 @@ struct CreateTask: View {
             )
         )
         
-        presentationMode.wrappedValue.dismiss()
+        dismiss()
     }
 }
 

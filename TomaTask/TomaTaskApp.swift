@@ -13,8 +13,8 @@ struct TomaTaskApp: App {
     var body: some Scene {
         WindowGroup {
             TomaTasksList()
-                .environment(ModelData())
+                .modelContainer(for: ModelData.self, isUndoEnabled: true)
         }
-        .modelContainer(for: Storage.self)
     }
 }
+

@@ -65,5 +65,4 @@ struct TomaTasksList: View {
 
 #Preview {
     TomaTasksList()
-        .environment(ModelData())
 }
