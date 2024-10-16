@@ -8,38 +8,21 @@
 import SwiftUI
 
 struct TaskView: View {
-    @Environment(\.verticalSizeClass) var verticalSizeClass
-    
     @State var task: TomaTask
     
     var time: TimeInterval {
         Double(task.maxDuration * 60)
     }
     
-    var isLandscape: Bool { verticalSizeClass == .compact }
-    
     var body: some View {
-        if (isLandscape) {
-            landscape()
-        } else {
-            portrait()
-        }
-    }
-    
-    func landscape() -> some View {
-        HStack {
-            CircleTimer(task: task, time: time)
-            
-            if(!task.tasks.isEmpty){
-                SubTaskList(tasks: task.tasks)
-            }
-        }.navigationBarBackButtonHidden(true)
-        .ignoresSafeArea(.all)
+        portrait()
     }
     
     func portrait() -> some View {
         VStack {
-            CircleTimer(task: task, time: time)
+            TimerView(task: task, time: time)
+            
+            SubTaskList(tasks: task.tasks)
             
             if(!task.tasks.isEmpty){
                 SubTaskList(tasks: task.tasks)

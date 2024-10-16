@@ -9,7 +9,7 @@ import SwiftUI
 
 let screenSize = UIScreen.main.bounds.height
 
-struct CircleTimer: View {
+struct TimerView: View {
     var task: TomaTask
     
     @State private var timer: Timer?
@@ -152,5 +152,5 @@ struct CircleTimer: View {
 }
 
 #Preview {
-    CircleTimer(task: TomaTask(), time: 30)
+    TimerView(task: TomaTask(), time: 30)
 }
