@@ -7,30 +7,37 @@
 
 import SwiftUI
 
+let screenSize = UIScreen.main.bounds.height
+
 struct CircleTimer: View {
     var task: TomaTask
     
-    @State var time: TimeInterval
-    @State private var timeRemaining: TimeInterval = 10
     @State private var timer: Timer?
-    
+    @State var time: TimeInterval
     @State private var isRunning: Bool = false
     @State private var pauseTime: Bool = false
     @State private var repetition: Int = 0
     
+    @State var heigth: CGFloat = screenSize
+    
+    var maxDuration : TimeInterval {
+         Double(task.maxDuration * 60)
+    }
+        
+    var pauseDuration : TimeInterval {
+        Double(task.pauseDuration * 60)
+    }
+    
     var body: some View {
         VStack (spacing: 8) {
             ZStack {
-                Circle()
-                    .stroke(lineWidth: 20)
-                    .fill(Color.primary)
-                
-                Circle()
-                    .trim(from: 0, to: CGFloat(1 - (time / task.maxDuration)))
-                    .stroke(style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
-                    .fill(Color.accentColor)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear, value: timeRemaining)
+                Rectangle()
+                    .overlay(content: {
+                        Color.red
+                            .background(.background)
+                            .scaleEffect(y: heigth / screenSize, anchor: .bottom)
+                    })
+                    .animation(.linear(duration: 1), value: heigth)
                 
                 VStack {
                     if task.repetition != repetition {
@@ -47,27 +54,40 @@ struct CircleTimer: View {
                         Text(formattedTime())
                             .font(.largeTitle)
                             .bold()
-                            .foregroundColor(.black)
                     } else {
                         Text("Congratulations! You completed the TomoTask!")
                             .font(.headline)
                             .multilineTextAlignment(.center)
                             .bold()
-                            .foregroundColor(.black)
                     }
                 
-                    Button {
-                        isRunning.toggle()
+                    HStack {
+                        if isRunning || pauseTime || time < maxDuration {
+                            Button {
+                                restartTimer()
+                            } label: {
+                                Label("Stop", systemImage: "stop.fill")
+                                    .font(.title)
+                                    .labelStyle(.iconOnly)
+                            }
+                        }
                         
-                        isRunning ? startTimer() : stopTimer()
-                    } label: {
-                        Label(!isRunning ? "Start Timer" : "Stop Timer", systemImage: isRunning ? "pause.fill" : "play.fill")
-                            .font(.headline)
+                        Button {
+                            isRunning.toggle()
+                            
+                            isRunning ? startTimer() : stopTimer()
+                        } label: {
+                            Label(!isRunning ? "Start" : "Paus", systemImage: isRunning ? "pause.fill" : "play.fill")
+                                .font(.title)
+                                .labelStyle(.iconOnly)
+                        }
                     }
                 }
+                .foregroundStyle(.white)
+                .blendMode(.difference)
             }
-            .padding()
         }
+        .ignoresSafeArea(.all)
     }
     
     func formattedTime () -> String {
@@ -79,7 +99,8 @@ struct CircleTimer: View {
     func startTimer() {
         if task.repetition == repetition {
             repetition = 0
-            time = task.maxDuration
+            time = maxDuration
+            heigth = screenSize
         }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -87,6 +108,12 @@ struct CircleTimer: View {
                 isRunning = true
                 
                 time -= 1
+                
+                if(pauseTime){
+                    heigth += screenSize / CGFloat(maxDuration / 1)
+                } else {
+                    heigth -= screenSize / CGFloat(maxDuration / 1)
+                }
             } else {
                 pauseTime.toggle()
 
@@ -108,15 +135,22 @@ struct CircleTimer: View {
         timer?.invalidate()
         
         if(time == 0){
-            time = pauseTime ? task.pauseDuration : task.maxDuration
+            time = pauseTime ? pauseDuration : maxDuration
         }
+    }
+    
+    func restartTimer() {
+        isRunning = false
+        
+        repetition = 0
+        
+        timer?.invalidate()
+    
+        time = maxDuration
+        heigth = screenSize
     }
 }
 
 #Preview {
-    let task = TomaTask()
-    
-    return Group{
-        CircleTimer(task: task, time: task.maxDuration)
-    }
+    CircleTimer(task: TomaTask(), time: 30)
 }

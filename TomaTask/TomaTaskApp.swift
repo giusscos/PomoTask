@@ -10,11 +10,19 @@ import SwiftData
 
 @main
 struct TomaTaskApp: App {
+    let container: ModelContainer
+    
+    init() {
+        do {
+            container = try ModelContainer(for: TomaTask.self, SubTask.self, migrationPlan: nil)
+        } catch {
+            fatalError("Error container initialization")
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             TomaTasksList()
-                .modelContainer(for: ModelData.self, isUndoEnabled: true)
-        }
+        }.modelContainer(container)
     }
 }
-

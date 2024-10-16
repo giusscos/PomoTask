@@ -9,60 +9,61 @@ import SwiftUI
 import SwiftData
 
 struct TomaTasksList: View {
-    @Environment(\.modelContext) var context
+    @Environment(\.modelContext) var modelContext
     
-    @Query private var tomaTasks: [TomaTask]
+    @Query var tomaTasks: [TomaTask]
     
-    @State private var showingProfile = false
-    
-    @State private var showingAddTomaTask = false
+    @State var selectedTask: TomaTask?
     
     var body: some View {
         NavigationSplitView {
             List {
-                Button {
-                    showingAddTomaTask.toggle()
-                } label: {
-                    Label("Add TomaTask", systemImage: "plus")
-                }
-                
                 ForEach(tomaTasks) { task in
                     NavigationLink {
-                        TomaTaskView(task: task)
+                        TaskView(task: task)
                     } label: {
                         TaskRow(task: task)
-                    }
-                }.onDelete { indexes in
-                    for index in indexes {
-                        let task = tomaTasks[index]
-                        deleteTask(item: task)
+                    }.swipeActions (edge: .trailing) {
+                        Button(role: .destructive) {
+                            deleteTask(item: task)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            selectedTask = task
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
                     }
                 }
             }
-            .navigationTitle("TomaTasks")
             .toolbar {
                 Button {
-                    showingProfile.toggle()
+                    addTask()
                 } label: {
-                    Label("Settings", systemImage: "gear")
+                    Label("Add timer", systemImage: "plus")
+                        .labelStyle(.iconOnly)
                 }
             }
-            .fullScreenCover(isPresented: $showingProfile, content: {
-                ProfileView()
-            })
-            .sheet(isPresented: $showingAddTomaTask) {
-                CreateTask()
+            .sheet(item: $selectedTask) { task in
+                EditTask(task: task)                
             }
         } detail: {
             Text("Select a TomaTask")
         }
     }
     
+    private func addTask() {
+        let tomatask = TomaTask()
+        selectedTask = tomatask
+        modelContext.insert(tomatask)
+    }
+    
     private func deleteTask(item: TomaTask) {
-        context.delete(item)
+        modelContext.delete(item)
     }
 }
 
 #Preview {
-    TomaTasksList()
+    TomaTasksList(selectedTask: TomaTask())
 }
