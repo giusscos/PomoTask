@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "PomoTask.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "PomoTask-dark.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
