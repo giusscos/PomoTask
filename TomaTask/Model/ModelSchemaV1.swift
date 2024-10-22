@@ -18,13 +18,15 @@ enum ModelSchemaV1: VersionedSchema {
     
     @Model
     class TomaTask  {
-        var title: String
-        var maxDuration: Int
-        var pauseDuration: Int
-        var repetition: Int
-        @Relationship(deleteRule: .cascade) var tasks: [SubTask]
+        var title: String = "PomoTask"
+        var maxDuration: Int = 25
+        var pauseDuration: Int = 5
+        var repetition: Int = 4
+        @Relationship(deleteRule: .cascade) var tasks: [SubTask]? = []
         
-        var category: Category
+        var unwrappedTasks: [SubTask] { tasks ?? [] }
+        
+        var category: Category = Category.work
         enum Category: String, CaseIterable, Codable, Identifiable {
             case work = "💼 Work"
             case study = "🧠 Study"
@@ -53,8 +55,9 @@ enum ModelSchemaV1: VersionedSchema {
     
     @Model
     class SubTask {
-        var text: String
-        var isCompleted: Bool
+        var text: String = "SubPomoTask"
+        var isCompleted: Bool = false
+        var tomaTask: TomaTask?
         
         init(text: String, isCompleted: Bool = false) {
             self.text = text

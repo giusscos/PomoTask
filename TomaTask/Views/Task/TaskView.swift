@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TaskView: View {
+    @Environment(\.dismiss) var dismiss
     @State var task: TomaTask
     
     var time: TimeInterval {
@@ -20,15 +21,35 @@ struct TaskView: View {
     
     func portrait() -> some View {
         VStack {
-            TimerView(task: task, time: time)
+            ZStack {
+                VStack {
+                    HStack {
+                        Button (role: .destructive) {
+                            dismiss()
+                        } label: {
+                            Label("Back", systemImage: "chevron.left")
+                                .labelStyle(.iconOnly)
+                                .padding(8)
+                                .foregroundColor(.white)
+                                .bold()
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(radius: 10, x: 0, y: 4)
+                        }
+                        Spacer()
+                    }
+                    Spacer()
+                }.zIndex(1)
+                .padding()
+                
+                TimerView(task: task, time: time)
+            }
             
-            SubTaskList(tasks: task.tasks)
-            
-            if(!task.tasks.isEmpty){
-                SubTaskList(tasks: task.tasks)
+            if(!task.unwrappedTasks.isEmpty){
+                SubTaskList(tasks: task.tasks ?? [])
             }
         }.navigationBarBackButtonHidden(true)
-        .ignoresSafeArea(.all)
+//        .ignoresSafeArea(.all)
     }
 }
 

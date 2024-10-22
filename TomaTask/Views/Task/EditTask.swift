@@ -69,11 +69,11 @@ struct EditTask: View {
                     )
                 }
                 
-                if(task.tasks.count > 0) {
+                if(task.unwrappedTasks.count > 0) {
                     Text("SubTasks")
                         .fontWeight(.semibold)
                     
-                    ForEach(task.tasks) { task in
+                    ForEach(task.tasks ?? []) { task in
                         Text(task.text)
                             .padding(.horizontal)
                     }
@@ -99,12 +99,12 @@ struct EditTask: View {
     private func addSubTask () {
         guard !newSubTask.isEmpty else { return }
                 
-        task.tasks.append(SubTask(text: newSubTask))
+        task.tasks?.append(SubTask(text: newSubTask))
         
         newSubTask = ""
     }
     
     private func deleteTask(at offsets: IndexSet) {
-        task.tasks.remove(atOffsets: offsets)
+        task.tasks?.remove(atOffsets: offsets)
     }
 }

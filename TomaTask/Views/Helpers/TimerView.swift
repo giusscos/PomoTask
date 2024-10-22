@@ -34,9 +34,10 @@ struct TimerView: View {
                 Rectangle()
                     .overlay(content: {
                         Color.red
-                            .background(.background)
                             .scaleEffect(y: heigth / screenSize, anchor: .bottom)
+                            .background(.background)
                     })
+                    .clipped()
                     .animation(.linear(duration: 1), value: heigth)
                 
                 VStack {

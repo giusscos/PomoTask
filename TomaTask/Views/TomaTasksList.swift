@@ -18,25 +18,30 @@ struct TomaTasksList: View {
     var body: some View {
         NavigationSplitView {
             List {
-                ForEach(tomaTasks) { task in
-                    NavigationLink {
-                        TaskView(task: task)
-                    } label: {
-                        TaskRow(task: task)
-                    }.swipeActions (edge: .trailing) {
-                        Button(role: .destructive) {
-                            deleteTask(item: task)
+                if (tomaTasks.isEmpty) {
+                    Text("No tasks yet! Create one by tapping the plus button in the top right corner.")
+                } else {
+                    ForEach(tomaTasks) { task in
+                        NavigationLink {
+                            TaskView(task: task)
                         } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        Button {
-                            selectedTask = task
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
+                            TaskRow(task: task)
+                        }.swipeActions (edge: .trailing) {
+                            Button(role: .destructive) {
+                                deleteTask(item: task)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            
+                            Button {
+                                selectedTask = task
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
                         }
                     }
                 }
-            }
+            }.navigationTitle("Timers")
             .toolbar {
                 Button {
                     addTask()
