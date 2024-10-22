@@ -14,16 +14,32 @@ struct TomaTasksList: View {
     @Query var tomaTasks: [TomaTask]
     
     @State var selectedTask: TomaTask?
+    @State var selectedCategory: TomaTask.Category = .study
+    
+    var timers: [TomaTask] {
+        tomaTasks.filter { $0.category == selectedCategory }
+    }
     
     var body: some View {
         NavigationSplitView {
+            Picker("Category", selection: $selectedCategory) {
+                ForEach(TomaTask.Category.allCases) { season in
+                    Text(season.rawValue).tag(season)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+            
             List {
-                if (tomaTasks.isEmpty) {
-                    Text("No tasks yet! Create one by tapping the plus button in the top right corner.")
+                if (timers.isEmpty) {
+                    Text("No tasks in this category yet!")
+                        .font(.title3)
                 } else {
-                    ForEach(tomaTasks) { task in
+                    ForEach(timers) { task in
                         NavigationLink {
                             TaskView(task: task)
+                                .toolbar(.hidden, for: .tabBar)
                         } label: {
                             TaskRow(task: task)
                         }.swipeActions (edge: .trailing) {
@@ -41,7 +57,8 @@ struct TomaTasksList: View {
                         }
                     }
                 }
-            }.navigationTitle("Timers")
+            }.listStyle(.plain)
+            .navigationTitle("Timers")
             .toolbar {
                 Button {
                     addTask()
@@ -51,7 +68,10 @@ struct TomaTasksList: View {
                 }
             }
             .sheet(item: $selectedTask) { task in
-                EditTask(task: task)                
+                EditTask(task: task)
+                    .onAppear() {
+                        task.category = selectedCategory
+                    }
             }
         } detail: {
             Text("Select a TomaTask")

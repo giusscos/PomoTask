@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import AudioToolbox
 
 let screenSize = UIScreen.main.bounds.height
 
 struct TimerView: View {
     var task: TomaTask
+    var alarmSound: Bool
     
     @State private var timer: Timer?
     @State var time: TimeInterval
@@ -110,7 +112,7 @@ struct TimerView: View {
                 
                 time -= 1
                 
-                if(pauseTime){
+                if(pauseTime) {
                     heigth += screenSize / CGFloat(maxDuration / 1)
                 } else {
                     heigth -= screenSize / CGFloat(maxDuration / 1)
@@ -132,7 +134,12 @@ struct TimerView: View {
             pauseTime = false
         }
         
+        if(alarmSound) {
+            playSound()
+        }
+        
         isRunning = false
+        
         timer?.invalidate()
         
         if(time == 0){
@@ -150,8 +157,12 @@ struct TimerView: View {
         time = maxDuration
         heigth = screenSize
     }
+    
+    func playSound() {
+        AudioServicesPlaySystemSound(1005)
+    }
 }
 
 #Preview {
-    TimerView(task: TomaTask(), time: 30)
+    TimerView(task: TomaTask(), alarmSound: false, time: 30)
 }

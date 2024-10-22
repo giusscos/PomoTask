@@ -13,7 +13,7 @@ enum ModelSchemaV1: VersionedSchema {
     static var versionIdentifier = Schema.Version(1, 0, 0)
     
     static var models: [any PersistentModel.Type] {
-        [TomaTask.self, SubTask.self ]
+        [TomaTask.self, SubTask.self]
     }
     
     @Model

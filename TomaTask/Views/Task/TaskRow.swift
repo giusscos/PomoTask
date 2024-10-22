@@ -11,12 +11,20 @@ struct TaskRow: View {
     var task: TomaTask
     
     var body: some View {
-        HStack (alignment: .lastTextBaseline) {
+        VStack (alignment: .leading) {
+            if(task.title != "") {
+                Text(task.title)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+            }
+            
             HStack (alignment: .lastTextBaseline, spacing: 0) {
                 Text("\(task.maxDuration)")
                     .font(.largeTitle)
                     .bold()
                     .foregroundStyle(Color.accentColor)
+                    .shadow(radius: 10, y: 4)
                 
                 Text(" min X ")
                     .font(.headline)
@@ -25,15 +33,11 @@ struct TaskRow: View {
                     .font(.largeTitle)
                     .bold()
                     .foregroundStyle(Color.accentColor)
-            }
-            
-            Text(task.title)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .lineLimit(1)
-            
-            Spacer()
+                    .shadow(radius: 10, y: 4)
                 
+                Text(" \(task.repetition == 1 ? "time" : "times")")
+                    .font(.headline)
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ struct TomaTaskApp: App {
     
     var body: some Scene {
         WindowGroup {
-            TomaTasksList()
+            TabBarViewController()
         }.modelContainer(container)
     }
 }

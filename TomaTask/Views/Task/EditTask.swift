@@ -11,7 +11,6 @@ struct EditTask: View {
     @Environment(\.dismiss) var dismiss
     
     @Bindable var task: TomaTask
-
     @State var newSubTask: String = ""
     
     var body: some View {
