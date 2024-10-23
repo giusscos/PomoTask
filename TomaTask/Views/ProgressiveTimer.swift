@@ -8,7 +8,7 @@
 import SwiftUI
 import AudioToolbox
 
-var defaultTimeStart: Int = 1
+var defaultTimeStart: Int = 300
 
 struct ProgressiveTimer: View {
     var alarmSound: Bool = false
@@ -22,44 +22,63 @@ struct ProgressiveTimer: View {
     
     @State private var selectedTime: Int = defaultTimeStart // Tempo selezionato per il prossimo Pomodoro
     @State private var feedbackMessage: String = ""  // Messaggio di feedback dall'utente
-    
+        
     var body: some View {
         VStack {
-            Text(!isBreakTime ? "Focus time" : "Break time")
-                .font(.headline)
-                .padding()
-            
-            Text("\(timeString(from: timeRemaining))")
-                .font(.largeTitle)
-                .bold()
-                .padding()
-            
-            HStack {
-                if timeRemaining < selectedTime {
-                    Button {
-                        restartTimer()
-                    } label: {
-                        Label("Stop", systemImage: "stop.fill")
-                            .font(.title)
-                            .labelStyle(.iconOnly)
-                            .contentTransition(.symbolEffect(.replace))
-                    }
-                }
+            ZStack {
+                MeshGradient(
+                    width: 3,
+                    height: 4,
+                    points: [
+                        [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                        [0.0, 0.3], [Float.random(in: 0.4...0.6), 0.5], [1.0, 0.3],
+                        [0.0, 0.5], [0.5, Float.random(in: 0.4...0.6)], [1.0, 0.5],
+                        [0.0, 0.9], [0.5, 0.9], [1.0, 0.9]
+                    ],
+                    colors: [
+                        .black, .black, .black,
+                        .orange, .orange, .orange,
+                        .red, .red, .red,
+                        .black, .black, .black
+                    ]
+                ).animation(.linear(duration: 1.7), value: timeRemaining)
                 
-                Button {
-                    isRunning.toggle()
+                VStack {
+                    Text(!isBreakTime ? "Focus time" : "Break time")
+                        .font(.headline)
+                        .padding()
                     
-                    isRunning ? startTimer() : stopTimer()
-                } label: {
-                    Label(!isRunning ? "Start" : "Paus", systemImage: isRunning ? "pause.fill" : "play.fill")
-                        .font(.title)
-                        .contentTransition(.symbolEffect(.replace))
-                        .labelStyle(.iconOnly)
+                    Text("\(timeString(from: timeRemaining))")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding()
+                    
+                    HStack {
+                        if timeRemaining < selectedTime {
+                            Button {
+                                restartTimer()
+                            } label: {
+                                Label("Stop", systemImage: "stop.fill")
+                                    .font(.title)
+                                    .labelStyle(.iconOnly)
+                                    .contentTransition(.symbolEffect(.replace))
+                            }
+                        }
+                        
+                        Button {
+                            isRunning.toggle()
+                            
+                            isRunning ? startTimer() : stopTimer()
+                        } label: {
+                            Label(!isRunning ? "Start" : "Pause", systemImage: isRunning ? "pause.fill" : "play.fill")
+                                .font(.title)
+                                .contentTransition(.symbolEffect(.replace))
+                                .labelStyle(.iconOnly)
+                        }
+                    }.foregroundStyle(.primary)
                 }
-            }
-            
-        }
-        .sheet(isPresented: $showingSheet, onDismiss: {
+            }.ignoresSafeArea(.all)
+        }.sheet(isPresented: $showingSheet, onDismiss: {
             timeRemaining = selectedTime
         }) {
             FeedbackSheet(selectedTime: $selectedTime, feedbackMessage: $feedbackMessage, breakTime: $isBreakTime)
