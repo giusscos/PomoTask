@@ -21,7 +21,7 @@ struct TomaTasksList: View {
     }
     
     var body: some View {
-        NavigationSplitView {
+        NavigationStack {
             Picker("Category", selection: $selectedCategory) {
                 ForEach(TomaTask.Category.allCases) { season in
                     Text(season.rawValue).tag(season)
@@ -63,8 +63,8 @@ struct TomaTasksList: View {
                 Button {
                     addTask()
                 } label: {
-                    Label("Add timer", systemImage: "plus")
-                        .labelStyle(.iconOnly)
+                    Label("Add", systemImage: "plus")
+                    .labelStyle(.titleOnly)
                 }
             }
             .sheet(item: $selectedTask) { task in
@@ -73,8 +73,6 @@ struct TomaTasksList: View {
                         task.category = selectedCategory
                     }
             }
-        } detail: {
-            Text("Select a TomaTask")
         }
     }
     

@@ -10,15 +10,12 @@ import SwiftUI
 struct TabBarViewController: View {
     var body: some View {
         TabView {
-            Tab("Timers", systemImage: "timer") {
+            Tab("Classic", systemImage: "timer") {
                 TimerController()
             }
             
-            Tab("Progressive Timer", systemImage: "dial.medium") {
-                Text("Progressive timer available soon!")
-                    .bold()
-                    .font(.largeTitle)
-                    .multilineTextAlignment(.center)
+            Tab("Progressive", systemImage: "dial.medium") {
+                ProgressiveTimer()
             }
         }
     }

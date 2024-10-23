@@ -83,6 +83,7 @@ struct TimerView: View {
                             Label(!isRunning ? "Start" : "Paus", systemImage: isRunning ? "pause.fill" : "play.fill")
                                 .font(.title)
                                 .labelStyle(.iconOnly)
+                                .contentTransition(.symbolEffect(.replace))
                         }
                     }
                 }

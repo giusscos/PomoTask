@@ -15,13 +15,10 @@ struct EditTask: View {
     
     var body: some View {
         VStack {
-            HStack {
-                Button("Back") {
-                    dismiss()
-                }
-                
-                Spacer()
+            Button("Back") {
+                dismiss()
             }.padding()
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             
             Form {
                 VStack(alignment: .leading) {
@@ -68,6 +65,16 @@ struct EditTask: View {
                     )
                 }
                 
+                HStack {
+                    Button("Add subTask", action: addSubTask)
+                    
+                    Spacer()
+                    
+                    TextField("SubTask title", text: $newSubTask)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+                
                 if(task.unwrappedTasks.count > 0) {
                     Text("SubTasks")
                         .fontWeight(.semibold)
@@ -77,16 +84,6 @@ struct EditTask: View {
                             .padding(.horizontal)
                     }
                     .onDelete(perform: deleteTask)
-                }
-                
-                HStack {
-                    Button("Add subTask", action: addSubTask)
-                    
-                    Spacer()
-                    
-                    TextField("SubTask title", text: $newSubTask)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
                 }
             }
             
