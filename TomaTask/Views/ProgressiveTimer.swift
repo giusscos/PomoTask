@@ -7,25 +7,44 @@
 
 import SwiftUI
 import AudioToolbox
+import ActivityKit
+import UserNotifications
 
-var defaultTimeStart: Int = 3
+var defaultTimeStart: Double = 5 * 60
+var defaultMinSeconds: Double = 3 * 60
+var defaultMaxSeconds: Double = 25 * 60
+
+let notificationCenter = UNUserNotificationCenter.current()
 
 struct ProgressiveTimer: View {
     @State private var alarmSound: Bool = true
     @State private var dimDisplay: Bool = false
-    
-    @State private var timer: Timer?
-    @State private var timeRemaining: Int = defaultTimeStart // Inizialmente 5 minuti (300 secondi)
-    
-    @State private var isBreakTime: Bool = false
-    @State private var isRunning: Bool = false
-    @State private var showingSheet: Bool = false  // Per mostrare lo sheet di feedback
-    
-    @State private var selectedTime: Int = defaultTimeStart // Tempo selezionato per il prossimo Pomodoro
-    @State private var feedbackMessage: String = ""  // Messaggio di feedback dall'utente
+    @State private var showingSheet: Bool = false
     
     @State private var meshValue1 = Float.random(in: 0.5...0.7)
     @State private var meshValue2 = Float.random(in: 0.4...0.8)
+    
+    @State private var selectedTime: Double = defaultTimeStart
+    @State private var totalTime: TimeInterval = defaultTimeStart
+    @State private var remainingTime: TimeInterval = defaultTimeStart
+    @State private var startTime: Date? = nil
+    @State private var timer: Timer? = nil
+    @State private var expirationDate: Date = Date()
+    
+    @State private var isRunning: Bool = false
+    @State private var isBreakTime: Bool = false
+    
+    let timeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.minute, .second]
+        formatter.zeroFormattingBehavior = .pad
+        return formatter
+    }()
+    
+    func handleMeshAnimation() {
+        meshValue1 = cos(.random(in: 0.0...1.0)) > 0 ? Float.random(in: 0.5...0.7) : Float.random(in: 0.4...0.8)
+        meshValue2 = cos(.random(in: 0.0...1.0)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
+    }
     
     var body: some View {
         VStack {
@@ -49,13 +68,12 @@ struct ProgressiveTimer: View {
                             ],
                             smoothsColors: true,
                             colorSpace: .perceptual
-                        ).animation(.easeInOut(duration: 4).repeatForever(autoreverses: true), value: timeRemaining)
+                        ).animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: remainingTime)
                     }.ignoresSafeArea(.all)
                 
                 HStack {
                     Button {
                         alarmSound.toggle()
-                        
                     } label: {
                         Label("Toggle sound", systemImage: alarmSound ? "speaker.fill" : "speaker.slash.fill")
                             .labelStyle(.iconOnly)
@@ -91,26 +109,24 @@ struct ProgressiveTimer: View {
                     Text(!isBreakTime ? "Focus time" : "Break time")
                         .font(.headline)
                     
-                    Text("\(timeString(from: timeRemaining))")
-                        .font(.largeTitle)
-                        .bold()
+                    Text(timeFormatter.string(from: remainingTime) ?? "00:00")
+                        .font(.system(size: 48, weight: .bold))
                     
                     HStack {
-                        if timeRemaining < selectedTime {
-                            Button {
-                                restartTimer()
-                            } label: {
-                                Label("Stop", systemImage: "stop.fill")
-                                    .font(.title)
-                                    .labelStyle(.iconOnly)
-                                    .contentTransition(.symbolEffect(.replace))
-                            }
-                        }
+                        Button {
+                            resetTimer()
+                        } label: {
+                            Label("Stop", systemImage: "stop.fill")
+                                .font(.title)
+                                .labelStyle(.iconOnly)
+                                .contentTransition(.symbolEffect(.replace))
+                                .opacity(remainingTime == selectedTime ? 0.3 : 1)
+                        }.disabled(remainingTime == selectedTime)
                         
                         Button {
                             isRunning.toggle()
                             
-                            isRunning ? startTimer() : stopTimer()
+                            isRunning ? startTimer() : pauseTimer()
                         } label: {
                             Label(!isRunning ? "Start" : "Pause", systemImage: isRunning ? "pause.fill" : "play.fill")
                                 .font(.title)
@@ -122,70 +138,79 @@ struct ProgressiveTimer: View {
             }
         }
         .sheet(isPresented: $showingSheet, onDismiss: {
-            timeRemaining = selectedTime
+            remainingTime = selectedTime
+            
+            totalTime = selectedTime
+            
+            startTime = nil
         }) {
-            FeedbackSheet(selectedTime: $selectedTime, feedbackMessage: $feedbackMessage, breakTime: $isBreakTime)
+            FeedbackSheet(selectedTime: $selectedTime, breakTime: $isBreakTime)
         }
-    }
-                 
-     // Convert seconds in mm:ss
-    func timeString(from seconds: Int) -> String {
-        let minutes = seconds / 60
-        let seconds = seconds % 60
-        return String(format: "%02d:%02d", minutes, seconds)
     }
     
     func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            meshValue1 = cos(Float(timeRemaining)) > 0 ? Float.random(in: 0.5...0.7) : Float.random(in: 0.4...0.8)
+        isRunning = true
+        
+        if startTime == nil {
+            startTime = Date()
+        }
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            handleMeshAnimation()
             
-            meshValue2 = cos(Float(timeRemaining)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
-            
-            if(timeRemaining > 0){
-                isRunning = true
+            if let startTime = startTime {
+                let elapsedTime = Date().timeIntervalSince(startTime)
                 
-                timeRemaining -= 1
-            } else {
-                showingSheet = true
-                stopTimer()
+                remainingTime = totalTime - elapsedTime
+                
+                if remainingTime <= 0 {
+                    pauseTimer()
+                    
+                    remainingTime = 0
+                    
+                    if alarmSound {
+                        playSound()
+                    }
+                    
+                    showingSheet = true
+                }
             }
         }
     }
     
-    func stopTimer() {
-        if(alarmSound && timeRemaining == 0) {
-            playSound()
-        }
-        
+    func killTimer() {
         isRunning = false
-        
         timer?.invalidate()
+        timer = nil
+        startTime = nil
     }
     
-    func restartTimer() {
-        isBreakTime = false
+    func pauseTimer() {
+        killTimer()
         
-        isRunning = false
-        
-        timer?.invalidate()
-
-        timeRemaining = defaultTimeStart
+        totalTime = remainingTime
     }
     
+    func resetTimer() {
+        killTimer()
+        
+        remainingTime = defaultTimeStart
+        
+        selectedTime = defaultTimeStart
+        
+        totalTime = defaultTimeStart
+    }
+   
     func playSound() {
         AudioServicesPlaySystemSound(1005)
     }
  }
                  
  struct FeedbackSheet: View {
-    @Environment(\.dismiss) var dismiss
-     
-    var defaultMinMinutes = 3 * 60
-    var defaultMaxMinutes = 25 * 60
-     
-    @Binding var selectedTime: Int
-    @Binding var feedbackMessage: String
-    @Binding var breakTime: Bool
+     @Environment(\.dismiss) var dismiss
+          
+     @Binding var selectedTime: Double
+     @Binding var breakTime: Bool
      
     var body: some View {
         NavigationStack {
@@ -212,7 +237,7 @@ struct ProgressiveTimer: View {
                     Button {
                         breakTime = false
                         
-                        selectedTime = selectedTime - defaultMinMinutes <= defaultMinMinutes ? defaultMinMinutes : selectedTime - defaultMinMinutes
+                        selectedTime = selectedTime - defaultMinSeconds <= defaultMinSeconds ? defaultMinSeconds : selectedTime - defaultMinSeconds
                         
                         dismiss()
                     } label: {
@@ -227,7 +252,7 @@ struct ProgressiveTimer: View {
                     Button {
                         breakTime = false
                         
-                        selectedTime = selectedTime + defaultMinMinutes <= defaultMaxMinutes ? selectedTime + defaultMinMinutes : defaultMaxMinutes
+                        selectedTime = selectedTime + defaultMinSeconds <= defaultMaxSeconds ? selectedTime + defaultMinSeconds : defaultMaxSeconds
                         
                         dismiss()
                     } label: {
@@ -244,8 +269,7 @@ struct ProgressiveTimer: View {
         }
     }
 }
-                 
-                 
+
 #Preview {
     ProgressiveTimer()
 }
