@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		684676262CD16C6000E904A5 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684676252CD16C6000E904A5 /* StoreKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		68617FD12CA43D2A003E906E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		684676252CD16C6000E904A5 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		68617FC02CA43D28003E906E /* TomaTask.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomaTask.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68617FD02CA43D2A003E906E /* TomaTaskTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomaTaskTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		68617FDA2CA43D2A003E906E /* TomaTaskUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomaTaskUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -65,6 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				684676262CD16C6000E904A5 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,12 +91,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		684676242CD16C6000E904A5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				684676252CD16C6000E904A5 /* StoreKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		68617FB72CA43D28003E906E = {
 			isa = PBXGroup;
 			children = (
 				68617FC22CA43D28003E906E /* TomaTask */,
 				68617FD32CA43D2A003E906E /* TomaTaskTests */,
 				68617FDD2CA43D2A003E906E /* TomaTaskUITests */,
+				684676242CD16C6000E904A5 /* Frameworks */,
 				68617FC12CA43D28003E906E /* Products */,
 			);
 			sourceTree = "<group>";

@@ -12,7 +12,7 @@ let screenSize = UIScreen.main.bounds.height
 
 struct TimerView: View {
     var task: TomaTask
-    var alarmSound: Bool
+    @Binding var alarmSound: Bool
     
     @State private var timer: Timer?
     @State var time: TimeInterval
@@ -165,5 +165,5 @@ struct TimerView: View {
 }
 
 #Preview {
-    TimerView(task: TomaTask(), alarmSound: false, time: 30)
+    TimerView(task: TomaTask(), alarmSound: .constant(false), time: 30)
 }

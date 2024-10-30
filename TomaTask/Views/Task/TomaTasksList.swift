@@ -21,7 +21,7 @@ struct TomaTasksList: View {
     }
     
     var body: some View {
-        NavigationStack {
+        VStack {
             Picker("Category", selection: $selectedCategory) {
                 ForEach(TomaTask.Category.allCases) { season in
                     Text(season.rawValue).tag(season)
@@ -60,11 +60,13 @@ struct TomaTasksList: View {
             }.listStyle(.plain)
             .navigationTitle("Timers")
             .toolbar {
-                Button {
-                    addTask()
-                } label: {
-                    Label("Add", systemImage: "plus")
-                    .labelStyle(.titleOnly)
+                ToolbarItemGroup (placement: .topBarTrailing) {
+                    Button {
+                        addTask()
+                    } label: {
+                        Label("Add", systemImage: "plus")
+                            .labelStyle(.titleOnly)
+                    }
                 }
             }
             .sheet(item: $selectedTask) { task in

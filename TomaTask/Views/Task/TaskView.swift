@@ -12,7 +12,7 @@ struct TaskView: View {
     
     @State var task: TomaTask
     @State var dimDisplay: Bool = false
-    @State var alarmSound: Bool = false
+    @State var alarmSound: Bool = true
     @State var isExpanded: Bool = false
     
     var time: TimeInterval {
@@ -26,57 +26,10 @@ struct TaskView: View {
     func portrait() -> some View {
         VStack {
             ZStack {
-                TimerView(task: task, alarmSound: alarmSound, time: time)
+                TimerView(task: task, alarmSound: $alarmSound, time: time)
+                            
+                TimerActions(alarmSound: $alarmSound, dimDisplay: $dimDisplay)
                 
-                HStack {
-                    Button (role: .destructive) {
-                        dismiss()
-                    } label: {
-                        Label("Back", systemImage: "chevron.left")
-                            .labelStyle(.iconOnly)
-                            .padding(8)
-                            .foregroundColor(.white)
-                            .bold()
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(radius: 10, x: 0, y: 4)
-                    }
-                    
-                    Button {
-                        alarmSound.toggle()
-                        
-                    } label: {
-                        Label("Toggle sound", systemImage: alarmSound ? "speaker.fill" : "speaker.slash.fill")
-                            .labelStyle(.iconOnly)
-                            .contentTransition(.symbolEffect(.replace))
-                            .padding(8)
-                            .foregroundColor(.white)
-                            .bold()
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(radius: 10, x: 0, y: 4)
-                            .animation(.none, value: alarmSound)
-                    }
-                    
-                    Button {
-                        dimDisplay.toggle()
-                        
-                        UIApplication.shared.isIdleTimerDisabled = dimDisplay
-                    } label: {
-                        Label("Auto-lock", systemImage: dimDisplay ? "lock" : "lock.open")
-                            .contentTransition(.symbolEffect(.replace))
-                            .padding(8)
-                            .foregroundColor(.white)
-                            .bold()
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .shadow(radius: 10, x: 0, y: 4)
-                            .animation(.none, value: dimDisplay)
-                    }
-                }
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            
                 if(!task.unwrappedTasks.isEmpty) {
                     withAnimation {
                         Button {

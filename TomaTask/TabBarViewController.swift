@@ -7,16 +7,20 @@
 
 import SwiftUI
 
-struct TabBarViewController: View {
+struct TabBarViewController: View {    
     var body: some View {
         TabView {
             Tab("Progressive", systemImage: "dial.medium") {
-                ProgressiveTimer()
+                NavigationStack {
+                    ProgressiveTimerList()
+                }
             }
-
+            
             Tab("Classic", systemImage: "timer") {
-                TimerController()
-            }            
+                NavigationStack {
+                    TomaTasksList()
+                }
+            }
         }
     }
 }
