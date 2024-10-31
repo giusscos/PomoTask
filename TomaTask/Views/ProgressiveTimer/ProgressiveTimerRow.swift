@@ -39,9 +39,8 @@ struct ProgressiveTimerRow: View {
                         smoothsColors: true,
                         colorSpace: .perceptual
                     )
-                    //                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: remainingTime)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .clipShape(RoundedRectangle(cornerRadius: 48))
             
             if isLocked {
                 Image(systemName: "lock.fill")

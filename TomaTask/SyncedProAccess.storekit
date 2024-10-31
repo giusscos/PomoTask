@@ -1,0 +1,145 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "28A5FE9E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6736973019",
+    "_developerTeamID" : "MA7MBQ947C",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 752058245.60069394,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21571698",
+      "localizations" : [
+
+      ],
+      "name" : "PomoTask Pro Access",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6737521865",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock Full App Access for 1 year",
+              "displayName" : "Annual Full App Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "pt_4999_1y_7d0",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "PomoTask Annual $49.99, 7 days free",
+          "subscriptionGroupID" : "21571698",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6737521979",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlock Full App Access for 1 month",
+              "displayName" : "Monthly Full App Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "pt_499_1m_7d0",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "PomoTask Monthly $4.99, 7 days free",
+          "subscriptionGroupID" : "21571698",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

@@ -51,32 +51,18 @@ struct ProgressiveTimerView: View {
     var body: some View {
         VStack {
             ZStack {
-                Rectangle()
-                    .overlay {
-                        MeshGradient(
-                            width: 3,
-                            height: 4,
-                            points: [
-                                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-                                [0.0, 0.3], [meshValue1, 0.4], [1.0, 0.3],
-                                [0.0, 0.6], [0.5, meshValue2], [1.0, 0.6],
-                                [0.0, 1], [0.5, 1], [1.0, 1]
-                            ],
-                            colors: [
-                                meshColor1, meshColor1, meshColor1,
-                                meshColor3, meshColor3, meshColor3,
-                                meshColor2, meshColor2, meshColor2,
-                                meshColor1, meshColor1, meshColor1,
-                            ],
-                            smoothsColors: true,
-                            colorSpace: .perceptual
-                        ).animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: remainingTime)
-                    }.ignoresSafeArea(.all)
-                    .onTapGesture {
-                        withAnimation {
-                            hideUI.toggle()
-                        }
+                MeshGradientTimer(
+                    time: remainingTime,
+                    meshColor1: meshColor1,
+                    meshColor2: meshColor2,
+                    meshColor3: meshColor3
+                )
+                
+                .onTapGesture {
+                    withAnimation {
+                        hideUI.toggle()
                     }
+                }
                 
                 TimerActions(alarmSound: $alarmSound, dimDisplay: $dimDisplay)
                     .hideUIAnimation(hideUI: hideUI)
