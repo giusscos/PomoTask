@@ -44,23 +44,27 @@ struct TimerActions: View {
                     .animation(.none, value: alarmSound)
             }
             
-            Button {
-                dimDisplay.toggle()
-                
-                UIApplication.shared.isIdleTimerDisabled = dimDisplay
-            } label: {
-                Label("Auto-lock", systemImage: dimDisplay ? "lock" : "lock.open")
-                    .contentTransition(.symbolEffect(.replace))
-                    .padding(8)
-                    .foregroundColor(.white)
-                    .bold()
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .shadow(radius: 10, x: 0, y: 4)
-                    .animation(.none, value: dimDisplay)
-            }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+//            Button {
+//                dimDisplay.toggle()
+//                
+//                UIApplication.shared.isIdleTimerDisabled = dimDisplay
+//            } label: {
+//                Label("Auto-lock", systemImage: dimDisplay ? "lock" : "lock.open")
+//                    .contentTransition(.symbolEffect(.replace))
+//                    .padding(8)
+//                    .foregroundColor(.white)
+//                    .bold()
+//                    .background(.ultraThinMaterial)
+//                    .clipShape(Capsule())
+//                    .shadow(radius: 10, x: 0, y: 4)
+//                    .animation(.none, value: dimDisplay)
+//            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding()
+        .onAppear() {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
     }
 }
 

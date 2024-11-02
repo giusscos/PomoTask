@@ -11,41 +11,51 @@ import StoreKit
 struct ProgressiveTimerList: View {
     @Namespace private var namespace
     
-    @State var products: [Product] = []
-        
-    @State private var colorSets: [(Color, Color, Color)] = [
-        (.black, .red, .orange),
-        (.black, .green, .blue),
-        (.black, .yellow, .purple),
-        (.black, .indigo, .pink)
-    ]
+    @AppStorage("tapToHideInterface") var tapToHideInterface: Bool = true
     
     @State var selectedProduct: Product?
-    @State var productId: String = ""
     @State var showSheet: Bool = false
+    
+    var store = Store()
     
     var body: some View {
         ScrollView {
+            NavigationLink {
+                ProgressiveTimerView(type: 0)
+                    .navigationTransition(.zoom(sourceID: -1, in: namespace))
+            } label: {
+                SolidTimer(heigth: screenSize)
+                    .overlay(content: {
+                        Text("Solid Color")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                            .tint(.primary)
+                    })
+                    .clipShape(RoundedRectangle(cornerRadius: 48))
+                    .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
+            }
+            .matchedTransitionSource(id: -1, in: namespace)
+            
             ForEach(0..<colorSets.count, id: \.self) { index in
                 let colors = colorSets[index]
                 
-                if index == 0 {
-                    NavigationLink {
-                        ProgressiveTimerView(meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                            .navigationTransition(.zoom(sourceID: index, in: namespace))
-                    } label: {
-                        ProgressiveTimerRow(isLocked: index != 0, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                if !store.products.isEmpty {
+                    if !store.unlockAccess {
+                        ProgressiveTimerRow(isLocked: !store.unlockAccess, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
                             .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
-                    }
-                    .matchedTransitionSource(id: index, in: namespace)
-                }
-                
-                if index != 0 && !products.isEmpty {
-                    ProgressiveTimerRow(isLocked: index != 0, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                        .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
-                        .onTapGesture {
-                            showSheet.toggle()
+                            .onTapGesture {
+                                showSheet.toggle()
+                            }
+                    } else {
+                        NavigationLink {
+                            ProgressiveTimerView(meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                                .navigationTransition(.zoom(sourceID: index, in: namespace))
+                        } label: {
+                            ProgressiveTimerRow(isLocked: !store.unlockAccess, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                                .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
                         }
+                        .matchedTransitionSource(id: index, in: namespace)
+                    }
                 }
             }
         }
@@ -53,17 +63,54 @@ struct ProgressiveTimerList: View {
         .padding(.top)
         .scrollIndicators(.hidden)
         .sheet(isPresented: $showSheet, content: {
-            PayWallView(productId: $productId, colorSets: colorSets, products: products)
+            PayWallView(colorSets: colorSets, products: store.products)
                 .presentationDragIndicator(.visible)
         })
-        .onAppear() {
-            Task {
-                products = try await Store().fetchAvailableProducts()
-            }
+        .fullScreenCover(isPresented: $tapToHideInterface, content: {
+            RelaxModePopover(tapToHideInterface: $tapToHideInterface)
+        })
+    }
+    
+    struct RelaxModePopover: View {
+        @Environment(\.dismiss) var dismiss
+        
+        @Binding var tapToHideInterface: Bool
+        
+        var body: some View {
+            VStack (spacing: 8) {
+                Image(systemName: "hand.tap.fill")
+                    .font(.system(size: 48))
+                    .transition(.symbolEffect(.appear))
+                    .foregroundStyle(Color.accentColor)
+                    .symbolEffect(.wiggle.up)
+                
+                Text("Relax Mode")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text("Tap the screen to focus and relax by hiding the interface. Simply tap anywhere on the screen to toggle visibility, reducing distractions and helping you enjoy a more peaceful experience and the fantastic design.")
+                    .multilineTextAlignment(.center)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Button {
+                    dismiss()
+                    tapToHideInterface = false
+                } label: {
+                    Text("Got it")
+                        .padding()
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                }.padding(.vertical)
+            }.padding()
+            .frame(maxWidth: 600)
         }
     }
 }
 
 #Preview {
-    ProgressiveTimerList()
+    ProgressiveTimerList(store: Store())
 }

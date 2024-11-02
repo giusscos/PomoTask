@@ -12,7 +12,7 @@ struct PayWallView: View {
     @Environment(\.purchase) private var purchase: PurchaseAction
     @Environment(\.dismiss) var dismiss
     
-    @Binding var productId: String
+    @State var productId: String = ""
     
     var selectedPrice: String {
         products.filter({$0.id == productId}).first?.displayPrice ?? ""
@@ -28,8 +28,9 @@ struct PayWallView: View {
     
     var featureSets: [(String, String, String)] = [
         ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
-        ("Crafted New Themes", "swatchpalette.fill", "Discover new visual and artistic themes every month"),
-        ("Crafted New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
+        ("Progressive Timer", "dial.medium", "You can gradually build stronger focus endurance over time"),
+        ("New Themes", "swatchpalette.fill", "Discover new visual and artistic themes every month"),
+        ("New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
         ("Feature suggestions", "questionmark.app.fill", "Take the chance to request a feature for your PomoTask app"),
     ]
     
@@ -45,7 +46,7 @@ struct PayWallView: View {
                             .shadow(radius: 10, x: 0, y: 4)
                     }
                 }.frame(height: 100)
-                    .frame(maxWidth: 400, alignment: .center)
+                .frame(maxWidth: 400, alignment: .center)
                 
                 VStack {
                     Text("Pro access".capitalized)
@@ -61,8 +62,8 @@ struct PayWallView: View {
             
             Picker(selection: $productId, label: Text("Select Plan")) {
                 ForEach(0..<products.count, id: \.self) { index in
-                    HStack {
-                        VStack {
+                    HStack (alignment: .center) {
+                        VStack (alignment: .leading) {
                             Text(products[index].displayName.capitalized)
                                 .font(.headline)
                                 .fontWeight(.semibold)
@@ -78,7 +79,7 @@ struct PayWallView: View {
             }.pickerStyle(.inline)
             .listRowSeparator(.hidden)
                 
-            Section(header: Text("What's included")) {
+            Section() {
                 ForEach(0..<featureSets.count, id: \.self) { index in
                     let feature = featureSets[index]
                     let colors = colorSets[index]
@@ -102,6 +103,8 @@ struct PayWallView: View {
                         }
                     }
                 }
+            } header: {
+                Text("What's included")
             }
             .listRowSeparator(.visible)
         }.onAppear() {
@@ -145,7 +148,7 @@ struct PayWallView: View {
 }
 
 #Preview {
-    PayWallView(productId: .constant(""), colorSets: [
+    PayWallView(colorSets: [
         (.black, .red, .orange),
         (.black, .green, .blue),
         (.black, .yellow, .purple),

@@ -19,8 +19,15 @@ struct ProgressiveTimerRow: View {
     
     var body: some View {
         ZStack {
-            Rectangle()
-                .overlay {
+            RoundedRectangle(cornerRadius: 48)
+                .strokeBorder(.ultraThinMaterial, lineWidth: 2)
+                .overlay(content: {
+                    Text("Mesh Gradient")
+                        .font(.title)
+                        .fontWeight(.semibold)
+                        .tint(.primary)
+                })
+                .background() {
                     MeshGradient(
                         width: 3,
                         height: 4,
@@ -41,6 +48,8 @@ struct ProgressiveTimerRow: View {
                     )
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 48))
+                
+                
             
             if isLocked {
                 Image(systemName: "lock.fill")

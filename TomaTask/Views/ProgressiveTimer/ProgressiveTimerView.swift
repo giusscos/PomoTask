@@ -8,11 +8,13 @@
 import SwiftUI
 import AudioToolbox
 
-var defaultTimeStart: Double = 0.1 * 60
+var defaultTimeStart: Double = 5 * 60
 var defaultMinSeconds: Double = 3 * 60
 var defaultMaxSeconds: Double = 25 * 60
 
 struct ProgressiveTimerView: View {
+    var type: Int = 1
+    
     @State var hideUI: Bool = false
     @State var alarmSound: Bool = true
     @State var dimDisplay: Bool = false
@@ -22,57 +24,50 @@ struct ProgressiveTimerView: View {
     @State private var meshValue1 = Float.random(in: 0.5...0.7)
     @State private var meshValue2 = Float.random(in: 0.4...0.8)
     
-    @State var meshColor1: Color
-    @State var meshColor2: Color
-    @State var meshColor3: Color
-
-    @State private var selectedTime: Double = defaultTimeStart
-    @State private var totalTime: TimeInterval = defaultTimeStart
-    @State private var remainingTime: TimeInterval = defaultTimeStart
-    @State private var startTime: Date? = nil
-    @State private var timer: Timer? = nil
-    @State private var expirationDate: Date = Date()
+    @State var meshColor1: Color = .black
+    @State var meshColor2: Color = .orange
+    @State var meshColor3: Color = .red
+        
+    @State var heigth: CGFloat = screenSize
     
+    @State private var selectedTime: Double = defaultTimeStart
+    @State private var timer: Timer?
+    @State var time: TimeInterval = 0
     @State private var isRunning: Bool = false
     @State private var isBreakTime: Bool = false
-    
-    let timeFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.minute, .second]
-        formatter.zeroFormattingBehavior = .pad
-        return formatter
-    }()
-    
-    func handleMeshAnimation() {
-        meshValue1 = cos(.random(in: 0.0...1.0)) > 0 ? Float.random(in: 0.5...0.7) : Float.random(in: 0.4...0.8)
-        meshValue2 = cos(.random(in: 0.0...1.0)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
-    }
     
     var body: some View {
         VStack {
             ZStack {
-                MeshGradientTimer(
-                    time: remainingTime,
-                    meshColor1: meshColor1,
-                    meshColor2: meshColor2,
-                    meshColor3: meshColor3
-                )
-                
-                .onTapGesture {
-                    withAnimation {
-                        hideUI.toggle()
+                if type == 0 {
+                    SolidTimer(heigth: heigth)
+                        .onTapGesture {
+                            withAnimation {
+                                hideUI.toggle()
+                            }
+                        }
+                } else {
+                    MeshGradientTimer(
+                        time: time,
+                        meshColor1: meshColor1,
+                        meshColor2: meshColor2,
+                        meshColor3: meshColor3
+                    )
+                    .onTapGesture {
+                        withAnimation {
+                            hideUI.toggle()
+                        }
                     }
                 }
                 
                 TimerActions(alarmSound: $alarmSound, dimDisplay: $dimDisplay)
                     .hideUIAnimation(hideUI: hideUI)
-                    
                 
                 VStack (spacing: 8) {
                     Text(!isBreakTime ? "Focus time" : "Break time")
                         .font(.headline)
                     
-                    Text(timeFormatter.string(from: remainingTime) ?? "00:00")
+                    Text(formattedTime())
                         .font(.system(size: 48, weight: .bold))
                     
                     HStack {
@@ -83,8 +78,8 @@ struct ProgressiveTimerView: View {
                                 .font(.title)
                                 .labelStyle(.iconOnly)
                                 .contentTransition(.symbolEffect(.replace))
-                                .opacity(remainingTime == selectedTime ? 0.3 : 1)
-                        }.disabled(remainingTime == selectedTime)
+                                .opacity(time == selectedTime ? 0.3 : 1)
+                        }.disabled(time == selectedTime)
                         
                         Button {
                             isRunning.toggle()
@@ -98,81 +93,88 @@ struct ProgressiveTimerView: View {
                         }
                     }.foregroundStyle(.primary)
                 }
-                    .hideUIAnimation(hideUI: hideUI)
+                .hideUIAnimation(hideUI: hideUI)
             }
         }
         .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showingSheet, onDismiss: {
-            remainingTime = selectedTime
-            
-            totalTime = selectedTime
-            
-            startTime = nil
+            time = selectedTime
+            if !isBreakTime {
+                heigth = screenSize
+            }
         }) {
             FeedbackSheet(selectedTime: $selectedTime, breakTime: $isBreakTime)
         }
+        .onAppear(){
+            time = defaultTimeStart
+        }
+    }
+    
+    func formattedTime () -> String {
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    func handleMeshAnimation() {
+        meshValue1 = cos(.random(in: 0.0...1.0)) > 0 ? Float.random(in: 0.5...0.7) : Float.random(in: 0.4...0.8)
+        meshValue2 = cos(.random(in: 0.0...1.0)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
     }
     
     func startTimer() {
-        isRunning = true
-        
-        if startTime == nil {
-            startTime = Date()
-        }
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            handleMeshAnimation()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            if type == 1 {
+                handleMeshAnimation()
+            }
             
-            if let startTime = startTime {
-                let elapsedTime = Date().timeIntervalSince(startTime)
+            if(time > 0) {
+                isRunning = true
                 
-                remainingTime = totalTime - elapsedTime
+                time -= 1
                 
-                if remainingTime <= 0 {
-                    pauseTimer()
-                    
-                    remainingTime = 0
-                    
-                    if alarmSound {
-                        playSound()
-                    }
-                    
-                    showingSheet = true
+                if(isBreakTime && type == 0) {
+                    heigth += screenSize / CGFloat(selectedTime / 1)
+                } else {
+                    heigth -= screenSize / CGFloat(selectedTime / 1)
                 }
+            } else {
+                pauseTimer()
+                
+                if alarmSound {
+                    playSound()
+                }
+                
+                showingSheet = true
             }
         }
     }
     
-    func killTimer() {
+    func pauseTimer() {
         isRunning = false
         timer?.invalidate()
-        timer = nil
-        startTime = nil
         hideUI = false
     }
     
-    func pauseTimer() {
-        killTimer()
-        
-        totalTime = remainingTime
-    }
-    
     func resetTimer() {
-        killTimer()
+        pauseTimer()
         
-        remainingTime = defaultTimeStart
+        isBreakTime = false
+        
+        time = defaultTimeStart
         
         selectedTime = defaultTimeStart
         
-        totalTime = defaultTimeStart
+        if type == 0 {
+            heigth = screenSize
+        }
     }
    
     func playSound() {
         AudioServicesPlaySystemSound(1005)
     }
  }
-                 
+
 struct FeedbackSheet: View {
  @Environment(\.dismiss) var dismiss
       

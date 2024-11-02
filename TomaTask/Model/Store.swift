@@ -9,8 +9,12 @@ import Foundation
 import StoreKit
 import SwiftUI
 
-@Observable
-class Store {
+@Observable class Store {
+    let productIdentifiers = ["pt_4999_1y_7d0", "pt_499_1m_7d0"]
+    var products: [Product] = []
+    var transactionId: UInt64 = 0
+    var unlockAccess: Bool = false
+    
     init() {
         Task {
             await observeTransactions()
@@ -51,15 +55,45 @@ class Store {
     private func processTransaction(_ transaction: StoreKit.Transaction) async {
         print("Transazione completata con successo: \(transaction)")
     }
-    
-    let productIdentifiers = ["pt_4999_1y_7d0", "pt_499_1m_7d0"]
-    
-    func fetchAvailableProducts() async throws -> [Product] {
-        let products = try await Product.products(for: productIdentifiers)
-        return products
+        
+    func fetchAvailableProducts() async throws {
+        let productsResult = try await Product.products(for: productIdentifiers)
+        
+        products = productsResult
+        
+        for product in products {
+            await isPurchased(product: product)
+        }
     }
     
-    func handlePurchase(purchase: PurchaseAction,product: Product) {
+    func isPurchased(product: Product?) async {
+        guard let product = product else {
+//            print("Error product")
+            return
+        }
+        guard let verificationResult = await product.currentEntitlement else {
+//            print("No entitlement found for product: \(product)")
+            return
+        }
+        
+        switch verificationResult {
+//        case .verified(let transaction):
+        case .verified(let transaction):
+            // Check the transaction and give the user access to purchased
+            // content as appropriate.
+            self.unlockAccess = true
+            self.transactionId = transaction.id
+            break
+//        case .unverified(let transaction, let verificationError):
+        case .unverified(_, _):
+            // Handle unverified transactions based
+            // on your business model.
+            self.unlockAccess = false
+            break
+        }
+    }
+    
+    func handlePurchase(purchase: PurchaseAction, product: Product) {
         Task {
             let result = try? await purchase(product)
             
@@ -71,11 +105,11 @@ class Store {
                     // Complete the transaction after providing
                     // the user access to the content.
                     await transaction.finish()
+                    self.unlockAccess = true
                     break
-                case .unverified(let transaction, let verificationError):
+                case .unverified(_, _):
                     // Handle unverified transactions based
                     // on your business model.
-                    print(transaction, verificationError)
                     break
                 }
             case .pending:
