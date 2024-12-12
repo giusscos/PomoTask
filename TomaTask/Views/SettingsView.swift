@@ -22,7 +22,7 @@ struct SettingsView: View {
             Section() {
                 RoundedRectangle(cornerRadius: 48)
                     .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, maxHeight: UIScreen.main.bounds.height * 0.4, alignment: .top)
+                    .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
                     .aspectRatio(16/9, contentMode: .fill)
                     .overlay {
                         VStack {

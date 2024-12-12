@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "PomoTask-dark.png",
+      "filename" : "pomotask-icon-v1-01.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,6 +25,7 @@
           "value" : "tinted"
         }
       ],
+      "filename" : "pomotask-icon-v1-02.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
