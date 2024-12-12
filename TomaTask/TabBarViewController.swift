@@ -15,6 +15,14 @@ var colorSets: [(Color, Color, Color)] = [
     (.black, .blue, .cyan)
 ]
 
+var featureSets: [(String, String, String)] = [
+    ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
+    ("Progressive Timer", "dial.medium", "You can gradually build stronger focus endurance over time"),
+    ("New Themes", "swatchpalette.fill", "Discover new visual and artistic themes every month"),
+    ("New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
+    ("Feature suggestions", "questionmark.app.fill", "Take the chance to request a feature for your PomoTask app"),
+]
+
 let screenSize = UIScreen.main.bounds.height
 
 let defaultAppIcon = "AppIcon"
@@ -22,49 +30,30 @@ let defaultAppIcon = "AppIcon"
 struct TabBarViewController: View {
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
     
-    @State var store = Store()
-    
     var body: some View {
         VStack {
-            if store.products.isEmpty{
-                ProgressView()
-            } else {
-                TabView {
-                    Tab("Progressive", systemImage: "dial.medium") {
-                        NavigationStack {
-                            ProgressiveTimerList(store: store)
-                        }
+            TabView {
+                Tab("Progressive", systemImage: "dial.medium") {
+                    NavigationStack {
+                        ProgressiveTimerList()
                     }
-                    
-                    Tab("Classic", systemImage: "timer") {
-                        NavigationStack {
-                            TomaTasksList()
-                        }
+                }
+                
+                Tab("Classic", systemImage: "timer") {
+                    NavigationStack {
+                        TomaTasksList()
                     }
-                    
-                    Tab("Settings", systemImage: "gear") {
-                        NavigationStack {
-                            SettingsView(appIcon: $appIcon, store: store)
-                        }
+                }
+                
+                Tab("Settings", systemImage: "gear") {
+                    NavigationStack {
+                        SettingsView(appIcon: $appIcon)
                     }
                 }
             }
         }
         .onAppear() {
-            Task {
-                try await store.fetchAvailableProducts()
-                
-                if !store.unlockAccess {
-                    appIcon = defaultAppIcon
-                }
-                
-                if let previousIcon = UIApplication.shared.alternateIconName {
-                    if previousIcon != appIcon {
-                        try await UIApplication.shared.setAlternateIconName(appIcon == defaultAppIcon ? nil : appIcon)
-                    }
-                }
-            }
-            
+            UITextField.appearance().clearButtonMode = .whileEditing
         }
     }
 }

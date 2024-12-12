@@ -11,10 +11,9 @@ struct SettingsView: View {
     @Binding var appIcon: String
     
     @State var showSheet: Bool = false
-    @State var showRefundSheet: Bool = false
     @State var showManageSheet: Bool = false
     
-    var store = Store()
+    @State var store = Store()
     
     let appIconSet: [String] = [defaultAppIcon, "AppIcon 1", "AppIcon 2", "AppIcon 3", "AppIcon 4"]
     
@@ -39,14 +38,14 @@ struct SettingsView: View {
                                 .fontWeight(.semibold)
                             
                             Button {
-                                if !store.unlockAccess {
+                                if store.purchasedSubscriptions.isEmpty {
                                     UIApplication.shared.setAlternateIconName(defaultAppIcon)
                                     showSheet.toggle()
                                 } else {
                                     showManageSheet.toggle()
                                 }
                             } label: {
-                                Label(store.unlockAccess ? "Manage subscription" : "Subscribe", systemImage: store.unlockAccess ? "pencil" : "lock.fill")
+                                Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.red)
                                     .padding(.horizontal)
@@ -68,7 +67,7 @@ struct SettingsView: View {
             Section {
                 LazyVGrid (columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     ForEach(appIconSet, id: \.self) { index in
-                        if store.unlockAccess || index == defaultAppIcon {
+                        if !store.purchasedSubscriptions.isEmpty || index == defaultAppIcon {
                             Image(index)
                                 .resizable()
                                 .scaledToFit()
@@ -103,60 +102,37 @@ struct SettingsView: View {
             }
             
             Section {
-                if store.unlockAccess {
-                    Link("Request a feature", destination: URL(string: "mailto:giusscos@icloud.com")!)
+                if !store.purchasedSubscriptions.isEmpty {
+                    Link("Request a feature", destination: URL(string: "mailto:hello@giusscos.com")!)
                         .font(.headline)
                         .foregroundColor(.blue)
+                    
+                    Button {
+                        showSheet.toggle()
+                    } label: {
+                        Text("Request a refund")
+                            .font(.headline)
+                            .foregroundColor(.blue)
+                    }
                 }
+                
+                Link("Terms of use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                    .font(.headline)
+                    .foregroundColor(.blue)
                 
                 Link("Privacy Policy", destination: URL(string: "https://giusscos.it/privacy")!)
                     .font(.headline)
                     .foregroundColor(.blue)
-                
-                Button {
-                    showRefundSheet.toggle()
-                } label: {
-                    Text("Request a refund")
-                        .font(.headline)
-                        .foregroundColor(.blue)
-                }
             } header: {
                 Text("Support")
             }
         }
-        .onAppear() {
-            Task {
-                try await store.fetchAvailableProducts()
-            }
-        }
         .sheet(isPresented: $showSheet, content: {
-            PayWallView(colorSets: colorSets, products: store.products)
-                .presentationDragIndicator(.visible)
+//            PayWallView(colorSets: colorSets, products: store.products)
+//                .presentationDragIndicator(.visible)
+            SubscriptionStoreContentView()
         })
         .manageSubscriptionsSheet(isPresented: $showManageSheet)
-        .refundRequestSheet(for: store.transactionId, isPresented: $showRefundSheet)
-    }
-    
-    func openMailApp() {
-        let email = "giusscos@icloud.com"
-        let subject = "Request a feature"
-        let body = "Hi team,"
-        
-        // Encode the subject and body text
-        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
-        if let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)&body=\(encodedBody)") {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url, options: [:]) { success in
-                    if !success {
-                        print("Failed to open Mail app.")
-                    }
-                }
-            } else {
-                print("Mail app is not available or not configured.")
-            }
-        }
     }
 }
 

@@ -13,10 +13,9 @@ struct ProgressiveTimerList: View {
     
     @AppStorage("tapToHideInterface") var tapToHideInterface: Bool = true
     
-    @State var selectedProduct: Product?
     @State var showSheet: Bool = false
     
-    var store = Store()
+    @State var store = Store()
     
     var body: some View {
         ScrollView {
@@ -32,30 +31,28 @@ struct ProgressiveTimerList: View {
                             .tint(.primary)
                     })
                     .clipShape(RoundedRectangle(cornerRadius: 48))
-                    .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
+                    .frame(maxWidth: 500, minHeight: UIScreen.main.bounds.height * 0.3)
             }
             .matchedTransitionSource(id: -1, in: namespace)
             
             ForEach(0..<colorSets.count, id: \.self) { index in
                 let colors = colorSets[index]
-                
-                if !store.products.isEmpty {
-                    if !store.unlockAccess {
-                        ProgressiveTimerRow(isLocked: !store.unlockAccess, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                            .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
-                            .onTapGesture {
-                                showSheet.toggle()
-                            }
-                    } else {
-                        NavigationLink {
-                            ProgressiveTimerView(meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                                .navigationTransition(.zoom(sourceID: index, in: namespace))
-                        } label: {
-                            ProgressiveTimerRow(isLocked: !store.unlockAccess, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                                .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.3)
+            
+                if store.purchasedSubscriptions.isEmpty {
+                    ProgressiveTimerRow(isLocked: true, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                        .frame(maxWidth: 500, minHeight: UIScreen.main.bounds.height * 0.3)
+                        .onTapGesture {
+                            showSheet.toggle()
                         }
-                        .matchedTransitionSource(id: index, in: namespace)
+                } else {
+                    NavigationLink {
+                        ProgressiveTimerView(meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                            .navigationTransition(.zoom(sourceID: index, in: namespace))
+                    } label: {
+                        ProgressiveTimerRow(isLocked: false, meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
+                            .frame(maxWidth: 500, minHeight: UIScreen.main.bounds.height * 0.3)
                     }
+                    .matchedTransitionSource(id: index, in: namespace)
                 }
             }
         }
@@ -63,8 +60,9 @@ struct ProgressiveTimerList: View {
         .padding(.top)
         .scrollIndicators(.hidden)
         .sheet(isPresented: $showSheet, content: {
-            PayWallView(colorSets: colorSets, products: store.products)
-                .presentationDragIndicator(.visible)
+//            PayWallView(colorSets: colorSets, products: store.products)
+//                .presentationDragIndicator(.visible)
+           SubscriptionStoreContentView()
         })
         .fullScreenCover(isPresented: $tapToHideInterface, content: {
             RelaxModePopover(tapToHideInterface: $tapToHideInterface)
@@ -112,5 +110,5 @@ struct ProgressiveTimerList: View {
 }
 
 #Preview {
-    ProgressiveTimerList(store: Store())
+    ProgressiveTimerList()
 }

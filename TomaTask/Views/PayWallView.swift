@@ -18,6 +18,10 @@ struct PayWallView: View {
         products.filter({$0.id == productId}).first?.displayPrice ?? ""
     }
     
+    var selectedFrequency: String {
+        products.filter({$0.id == productId}).first!.subscription?.subscriptionPeriod.debugDescription ?? ""
+    }
+    
     var product: Product {
         products.filter({$0.id == productId}).first!
     }
@@ -25,14 +29,6 @@ struct PayWallView: View {
     var colorSets: [(Color, Color, Color)]
     
     var products: [Product]
-    
-    var featureSets: [(String, String, String)] = [
-        ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
-        ("Progressive Timer", "dial.medium", "You can gradually build stronger focus endurance over time"),
-        ("New Themes", "swatchpalette.fill", "Discover new visual and artistic themes every month"),
-        ("New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
-        ("Feature suggestions", "questionmark.app.fill", "Take the chance to request a feature for your PomoTask app"),
-    ]
     
     var body: some View {
         List {
@@ -60,24 +56,26 @@ struct PayWallView: View {
             .listRowInsets(.init(top: 48, leading: 0, bottom: 0, trailing: 0))
             .listRowBackground(Color.clear)
             
-            Picker(selection: $productId, label: Text("Select Plan")) {
-                ForEach(0..<products.count, id: \.self) { index in
-                    HStack (alignment: .center) {
-                        VStack (alignment: .leading) {
-                            Text(products[index].displayName.capitalized)
-                                .font(.headline)
-                                .fontWeight(.semibold)
+            if !products.isEmpty {
+                Picker(selection: $productId, label: Text("Select Plan")) {
+                    ForEach(0..<products.count, id: \.self) { index in
+                        HStack (alignment: .center) {
+                            VStack (alignment: .leading) {
+                                Text(products[index].displayName.capitalized)
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
                                 
-                            Text(products[index].description)
+                                Text(products[index].description)
+                                    .font(.subheadline)
+                            }.frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Text(products[index].displayPrice.capitalized)
                                 .font(.subheadline)
-                        }.frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text(products[index].displayPrice.capitalized)
-                            .font(.subheadline)
-                    }.tag(products[index].id)
-                }
-            }.pickerStyle(.inline)
-            .listRowSeparator(.hidden)
+                        }.tag(products[index].id)
+                    }
+                }.pickerStyle(.inline)
+                    .listRowSeparator(.hidden)
+            }
                 
             Section() {
                 ForEach(0..<featureSets.count, id: \.self) { index in
@@ -107,32 +105,50 @@ struct PayWallView: View {
                 Text("What's included")
             }
             .listRowSeparator(.visible)
+            
+            Section {
+                Link("Terms of use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                
+                Link("Privacy Policy", destination: URL(string: "https://giusscos.it/privacy")!)
+                    .font(.headline)
+                    .foregroundColor(.blue)
+            } header: {
+                Text("Support")
+            }
         }.onAppear() {
             productId = products.first?.id ?? ""
         }
         
         if selectedPrice != "" {
-            Button {
-                Store().handlePurchase(purchase: purchase, product: product)
+            VStack {
+                Text("Plan automatically renews after \(selectedFrequency) if you don't cancel.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 
-                dismiss()
-            } label: {
-                Text("Subscribe for \(selectedPrice)")
-                    .bold()
-                    .padding()
-                    .font(.title3)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .background(Color.accentColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
-                
+                Button {
+//                    Store().handlePurchase(purchase: purchase, product: product)
+                    
+                    dismiss()
+                } label: {
+                    Text("Subscribe for \(selectedPrice)/\(selectedFrequency.lowercased().split(separator: " ")[1])")
+                        .bold()
+                        .padding()
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .background(Color.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .padding(.horizontal)
+                    
+                }
             }
         } else {
             Button {
                 dismiss()
             } label: {
-                Text("This product can't be purchased")
+                Text("Something wrong. Try later")
                     .bold()
                     .padding()
                     .font(.title3)
