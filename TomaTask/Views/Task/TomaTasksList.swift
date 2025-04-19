@@ -39,10 +39,10 @@ struct TomaTasksList: View {
                     ForEach(timers) { task in
                         NavigationLink {
                             TaskView(task: task)
-                                .toolbar(.hidden, for: .tabBar)
                         } label: {
                             TaskRow(task: task)
-                        }.swipeActions (edge: .trailing) {
+                        }
+                        .swipeActions (edge: .trailing) {
                             Button(role: .destructive) {
                                 deleteTask(item: task)
                             } label: {
@@ -54,10 +54,12 @@ struct TomaTasksList: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
+                            .tint(.blue)
                         }
                     }
                 }
-            }.listStyle(.plain)
+            }
+            .listStyle(.plain)
             .navigationTitle("Timers")
             .toolbar {
                 ToolbarItemGroup (placement: .topBarTrailing) {

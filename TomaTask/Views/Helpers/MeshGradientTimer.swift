@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct MeshGradientTimer: View {
-    var meshValue1 = Float.random(in: 0.5...0.7)
-    var meshValue2 = Float.random(in: 0.4...0.8)
+    var meshValue1: Float = 0.5
+    var meshValue2: Float = 0.8
     
     var time: Double? = 0
     

@@ -9,13 +9,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var appIcon: String
-    
     @State var showSheet: Bool = false
     @State var showManageSheet: Bool = false
-    
     @State var store = Store()
-    
-    let appIconSet: [String] = [defaultAppIcon, "AppIcon 1", "AppIcon 2", "AppIcon 3", "AppIcon 4"]
     
     var body: some View {
         List {
@@ -65,40 +61,20 @@ struct SettingsView: View {
             .listRowSeparator(.hidden)
             
             Section {
-                LazyVGrid (columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    ForEach(appIconSet, id: \.self) { index in
-                        if !store.purchasedSubscriptions.isEmpty || index == defaultAppIcon {
-                            Image(index)
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .frame(maxWidth: 100, maxHeight: 100, alignment: .center)
-                                .onTapGesture {
-                                    appIcon = index
-                                    UIApplication.shared.setAlternateIconName(index == defaultAppIcon ? nil : index)
-                                }
-                        } else {
-                            Image(index)
-                                .resizable()
-                                .grayscale(1)
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .overlay {
-                                    Image(systemName: "lock.fill")
-                                        .font(.largeTitle)
-                                        .shadow(radius: 10, x: 0, y: 4)
-                                        .padding()
-                                        .foregroundStyle(.ultraThinMaterial)
-                                }
-                                .frame(maxWidth: 100, maxHeight: 100, alignment: .center)
-                                .onTapGesture {
-                                    showSheet.toggle()
-                                }
-                        }
+                NavigationLink {
+                    AppIconSelectionView(selectedIcon: $appIcon, store: store)
+                } label: {
+                    HStack {
+                        Text("App Icon")
+
+                        Image(appIcon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
-            } header: {
-                Text("App Icon")
             }
             
             Section {
@@ -128,8 +104,6 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $showSheet, content: {
-//            PayWallView(colorSets: colorSets, products: store.products)
-//                .presentationDragIndicator(.visible)
             SubscriptionStoreContentView()
         })
         .manageSubscriptionsSheet(isPresented: $showManageSheet)

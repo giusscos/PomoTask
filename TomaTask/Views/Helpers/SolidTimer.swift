@@ -9,11 +9,12 @@ import SwiftUI
 
 struct SolidTimer: View {
     var heigth: CGFloat
+    var color: Color = .red
         
     var body: some View {
             Rectangle()
                 .overlay(content: {
-                    Color.red
+                    color
                         .scaleEffect(y: heigth / screenSize, anchor: .bottom)
                         .background(.background)
                 })
@@ -24,5 +25,5 @@ struct SolidTimer: View {
 }
 
 #Preview {
-    SolidTimer(heigth: screenSize)
+    SolidTimer(heigth: screenSize, color: .blue)
 }

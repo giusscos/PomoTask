@@ -8,33 +8,54 @@
 import SwiftUI
 
 struct SubTaskList: View {
+//    @Environment(\.dismiss) var dismiss
+    
     var tasks: [SubTask]
     
     @State var tasksCompleted: Bool = false
 
     var body: some View {
-        List {
-            Button {
-                tasksCompleted.toggle()
+//        NavigationStack {
+            List {
+                Button {
+                    tasksCompleted.toggle()
+                    
+                    tasks.forEach() { $0.isCompleted = tasksCompleted }
+                } label: {
+                    Label(!tasksCompleted ? "Complete" : "Reset", systemImage: !tasksCompleted ? "plus.circle.fill" : "minus.circle.fill")
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .listRowBackground(Color.clear)
                 
-                tasks.forEach() { $0.isCompleted = tasksCompleted }
-            } label: {
-                Label(!tasksCompleted ? "Complete" : "Reset", systemImage: !tasksCompleted ? "plus.circle.fill" : "minus.circle.fill")
+                ForEach(tasks, id: \.self) { task in
+                    Label(task.text, systemImage: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .strikethrough(task.isCompleted)
+                        .disabled(task.isCompleted)
+                        .onTapGesture {
+                            task.isCompleted.toggle()
+                            
+                            setTasksCompleted()
+                        }
+                        .listRowBackground(Color.clear)
+                }
             }
-            
-            ForEach(tasks, id: \.self) { task in
-                Label(task.text, systemImage: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .strikethrough(task.isCompleted)
-                    .disabled(task.isCompleted)
-                    .onTapGesture {
-                        task.isCompleted.toggle()
-
-                        setTasksCompleted()
-                    }
+            .padding()
+            .listStyle(.plain)
+            .background(Color.clear)
+//            .toolbar(content: {
+//                ToolbarItem(placement: .topBarTrailing) {
+//                    Button {
+//                        dismiss()
+//                    } label: {
+//                        Label("Close", systemImage: "xmark.circle.fill")
+//                            .font(.headline)
+//                    }
+//                }
+//            })
+            .onAppear() {
+                setTasksCompleted()
             }
-        }.onAppear() {
-            setTasksCompleted()
-        }
+//        }
     }
     
     private func setTasksCompleted() {

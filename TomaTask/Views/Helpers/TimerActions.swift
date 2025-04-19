@@ -12,37 +12,57 @@ struct TimerActions: View {
     
     @Binding var alarmSound: Bool
     @Binding var dimDisplay: Bool
+    @Binding var showingColorCustomization: Bool
+    var backButton: Bool = true
     
     var body: some View {
-        HStack {
-            Button (role: .destructive) {
-                dismiss()
-            } label: {
-                Label("Back", systemImage: "chevron.left")
-                    .labelStyle(.iconOnly)
-                    .contentTransition(.symbolEffect(.replace))
-                    .padding(8)
-                    .foregroundColor(.white)
-                    .bold()
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .shadow(radius: 10, x: 0, y: 4)
+        VStack {
+            HStack {
+                if backButton {
+                    Button (role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Label("Back", systemImage: "chevron.left")
+                            .labelStyle(.iconOnly)
+                            .padding(8)
+                            .foregroundColor(.white)
+                            .bold()
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .shadow(radius: 10, x: 0, y: 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                Button {
+                    alarmSound.toggle()
+                } label: {
+                    Label("Toggle sound", systemImage: alarmSound ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .labelStyle(.iconOnly)
+                        .contentTransition(.symbolEffect(.replace))
+                        .padding(8)
+                        .foregroundColor(.white)
+                        .bold()
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(radius: 10, x: 0, y: 4)
+                        .animation(.none, value: alarmSound)
+                }
+                
+                Button {
+                    showingColorCustomization = true
+                } label: {
+                    Label("Customize Colors", systemImage: "paintpalette.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.headline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial)
+                        .foregroundColor(.white)
+                        .clipShape(Circle())
+                }
             }
-            
-            Button {
-                alarmSound.toggle()
-            } label: {
-                Label("Toggle sound", systemImage: alarmSound ? "speaker.fill" : "speaker.slash.fill")
-                    .labelStyle(.iconOnly)
-                    .contentTransition(.symbolEffect(.replace))
-                    .padding(8)
-                    .foregroundColor(.white)
-                    .bold()
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .shadow(radius: 10, x: 0, y: 4)
-                    .animation(.none, value: alarmSound)
-            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
             
 //            Button {
 //                dimDisplay.toggle()
@@ -69,5 +89,5 @@ struct TimerActions: View {
 }
 
 #Preview {
-    TimerActions(alarmSound: .constant(true), dimDisplay: .constant(true))
+    TimerActions(alarmSound: .constant(true), dimDisplay: .constant(true), showingColorCustomization: .constant(false))
 }

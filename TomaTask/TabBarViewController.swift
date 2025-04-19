@@ -7,19 +7,11 @@
 
 import SwiftUI
 
-var colorSets: [(Color, Color, Color)] = [
-    (.black, .red, .orange),
-    (.black, .green, .blue),
-    (.black, .yellow, .purple),
-    (.black, .indigo, .pink),
-    (.black, .blue, .cyan)
-]
-
 var featureSets: [(String, String, String)] = [
-    ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
-    ("Progressive Timer", "dial.medium", "You can gradually build stronger focus endurance over time"),
-    ("New Themes", "swatchpalette.fill", "Discover new visual and artistic themes every month"),
+    ("Support", "hand.thumbsup.fill", "Help us to improve PomoTask for you and other users"),
+    ("New Themes", "swatchpalette.fill", "Personalize timers with your favorite colors and gradients"),
     ("New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
+    ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
     ("Feature suggestions", "questionmark.app.fill", "Take the chance to request a feature for your PomoTask app"),
 ]
 
@@ -35,7 +27,7 @@ struct TabBarViewController: View {
             TabView {
                 Tab("Progressive", systemImage: "dial.medium") {
                     NavigationStack {
-                        ProgressiveTimerList()
+                        ProgressiveTimerView()
                     }
                 }
                 

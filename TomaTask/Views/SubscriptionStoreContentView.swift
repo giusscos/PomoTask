@@ -14,40 +14,30 @@ struct SubscriptionStoreContentView: View {
     var body: some View {
         SubscriptionStoreView(groupID: Store().groupId) {
             List {
-                VStack (spacing: 32) {
-                    HStack (spacing: -80.0) {
-                        ForEach(0..<4, id: \.self) { index in
-                            let colors = colorSets[index]
+                Section {
+                    VStack (spacing: 32) {
+                        VStack {
+                            Text("Pro access".capitalized)
+                                .font(.largeTitle)
+                                .bold()
                             
-                            MeshGradientTimer(time: Double(index), meshColor1: colors.0, meshColor2: colors.1, meshColor3: colors.2)
-                                .clipShape(Circle())
-                                .shadow(radius: 10, x: 0, y: 4)
+                            Text("Unlock fantastic and handcrafted themes and app icons for your cool Pomorodo and Progressive timer")
+                                .multilineTextAlignment(.center)
                         }
                     }
-                    .frame(height: 100)
-                    .frame(maxWidth: 400, alignment: .center)
-                    
-                    VStack {
-                        Text("Pro access".capitalized)
-                            .font(.largeTitle)
-                            .bold()
-                        
-                        Text("Unlock fantastic and handcrafted themes and app icons for your cool Pomorodo and Progressive timer")
-                            .multilineTextAlignment(.center)
-                    }
                 }
+                .listRowBackground(Color.clear)
                 
                 Section() {
                     ForEach(0..<featureSets.count, id: \.self) { index in
                         let feature = featureSets[index]
-                        let colors = colorSets[index]
                         
                         HStack (spacing: 16) {
                             Image(systemName: feature.1)
                                 .frame(width: 32, height: 32)
                                 .padding(4)
                                 .foregroundStyle(.white)
-                                .background(index % 2 == 0 ? colors.1 : colors.2)
+                                .background(Color.blue)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                             
                             VStack (alignment: .leading){
