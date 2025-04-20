@@ -8,14 +8,32 @@
 import SwiftUI
 
 struct MeshGradientTimer: View {
-    var meshValue1: Float = 0.5
-    var meshValue2: Float = 0.8
-    
     var time: Double? = 0
+    
+    // Animation parameters
+    private let breathingDuration: Double = 4.0
+    private let minScale: Float = 0.4
+    private let maxScale: Float = 0.8
     
     var meshColor1: Color
     var meshColor2: Color
     var meshColor3: Color
+    
+    private var breathingProgress: Float {
+        guard let time = time else { return 0.5 }
+        
+        // Calculate the current cycle position
+        let cycle = time.truncatingRemainder(dividingBy: breathingDuration)
+        let progress = cycle / breathingDuration
+        
+        // Calculate the sine wave value
+        let sineValue = sin(progress * .pi * 2)
+        let normalizedSine = (sineValue + 1) / 2
+        
+        // Calculate the final scale value
+        let scaleRange = maxScale - minScale
+        return minScale + (scaleRange * Float(normalizedSine))
+    }
     
     var body: some View {
         Rectangle()
@@ -25,8 +43,8 @@ struct MeshGradientTimer: View {
                     height: 4,
                     points: [
                         [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-                        [0.0, 0.3], [meshValue1, 0.4], [1.0, 0.3],
-                        [0.0, 0.6], [0.5, meshValue2], [1.0, 0.6],
+                        [0.0, 0.3], [breathingProgress, 0.4], [1.0, 0.3],
+                        [0.0, 0.6], [0.5, breathingProgress], [1.0, 0.6],
                         [0.0, 1], [0.5, 1], [1.0, 1]
                     ],
                     colors: [
@@ -40,7 +58,7 @@ struct MeshGradientTimer: View {
                 )
             }
             .ignoresSafeArea(.all)
-            .animation(.easeInOut(duration: 2).repeatForever(), value: time)
+            .animation(.easeInOut(duration: 5), value: time)
     }
 }
 

@@ -6,56 +6,64 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SubTaskList: View {
-//    @Environment(\.dismiss) var dismiss
-    
+    @Environment(\.modelContext) private var modelContext
+
     var tasks: [SubTask]
     
     @State var tasksCompleted: Bool = false
 
     var body: some View {
-//        NavigationStack {
-            List {
-                Button {
-                    tasksCompleted.toggle()
-                    
-                    tasks.forEach() { $0.isCompleted = tasksCompleted }
-                } label: {
-                    Label(!tasksCompleted ? "Complete" : "Reset", systemImage: !tasksCompleted ? "plus.circle.fill" : "minus.circle.fill")
-                        .contentTransition(.symbolEffect(.replace))
-                }
-                .listRowBackground(Color.clear)
+        List {
+            Button {
+                tasksCompleted.toggle()
                 
-                ForEach(tasks, id: \.self) { task in
-                    Label(task.text, systemImage: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .strikethrough(task.isCompleted)
-                        .disabled(task.isCompleted)
-                        .onTapGesture {
-                            task.isCompleted.toggle()
+                tasks.forEach() { task in
+                    if task.isCompleted != tasksCompleted {
+                        task.isCompleted = tasksCompleted
+                        
+                        if tasksCompleted {
+                            let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
                             
-                            setTasksCompleted()
+                            stats.subtasksCompleted += 1
+                            
+                            try? modelContext.save()
                         }
-                        .listRowBackground(Color.clear)
+                    }
                 }
+            } label: {
+                Label(!tasksCompleted ? "Complete" : "Reset", systemImage: !tasksCompleted ? "plus.circle.fill" : "minus.circle.fill")
+                    .contentTransition(.symbolEffect(.replace))
             }
-            .padding()
-            .listStyle(.plain)
-            .background(Color.clear)
-//            .toolbar(content: {
-//                ToolbarItem(placement: .topBarTrailing) {
-//                    Button {
-//                        dismiss()
-//                    } label: {
-//                        Label("Close", systemImage: "xmark.circle.fill")
-//                            .font(.headline)
-//                    }
-//                }
-//            })
-            .onAppear() {
-                setTasksCompleted()
+            .listRowBackground(Color.clear)
+            
+            ForEach(tasks, id: \.self) { task in
+                Label(task.text, systemImage: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .strikethrough(task.isCompleted)
+                    .disabled(task.isCompleted)
+                    .onTapGesture {
+                        let wasCompleted = task.isCompleted
+                        task.isCompleted.toggle()
+                        
+                        if !wasCompleted && task.isCompleted {
+                            let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                            stats.subtasksCompleted += 1
+                            try? modelContext.save()
+                        }
+                        
+                        setTasksCompleted()
+                    }
+                    .listRowBackground(Color.clear)
             }
-//        }
+        }
+        .padding()
+        .listStyle(.plain)
+        .background(Color.clear)
+        .onAppear() {
+            setTasksCompleted()
+        }
     }
     
     private func setTasksCompleted() {

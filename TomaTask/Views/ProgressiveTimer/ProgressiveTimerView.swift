@@ -19,6 +19,8 @@ struct ProgressiveTimerView: View {
         var id: String { self.rawValue }
     }
     
+    @Environment(\.modelContext) private var modelContext
+    
     @State var store = Store()
     
     @State var hideUI: Bool = false
@@ -50,6 +52,7 @@ struct ProgressiveTimerView: View {
     @State var time: TimeInterval = 0
     @State private var isRunning: Bool = false
     @State private var isBreakTime: Bool = false
+    @State private var initialTime: TimeInterval = 0
     
     var isSubscribed: Bool {
         !store.purchasedSubscriptions.isEmpty
@@ -116,7 +119,8 @@ struct ProgressiveTimerView: View {
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showingSheet, onDismiss: {
             time = selectedTime
-            if !isBreakTime {
+            
+            if !isBreakTime && colorMode == .solid {
                 heigth = screenSize
             }
         }) {
@@ -139,8 +143,15 @@ struct ProgressiveTimerView: View {
         .onAppear(){
             time = defaultTimeStart
             
+            if colorMode == .solid {
+                heigth = screenSize
+            }
+            
             // Load saved colors when the view appears
             loadSavedColors()
+        }
+        .onDisappear() {
+            resetTimer()
         }
     }
     
@@ -200,10 +211,17 @@ struct ProgressiveTimerView: View {
     }
     
     func startTimer() {
+        initialTime = time
+        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        stats.timersStarted += 1
+        try? modelContext.save()
+        
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if colorMode == .mesh {
                 handleMeshAnimation()
             }
+            
+            stats.totalFocusTime += 1
             
             if(time > 0) {
                 isRunning = true
@@ -212,7 +230,7 @@ struct ProgressiveTimerView: View {
                 
                 if(isBreakTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(selectedTime / 1)
-                } else {
+                } else if (!isBreakTime && colorMode == .solid) {
                     heigth -= screenSize / CGFloat(selectedTime / 1)
                 }
             } else {
@@ -221,6 +239,11 @@ struct ProgressiveTimerView: View {
                 if alarmSound {
                     playSound()
                 }
+                
+                
+                let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                stats.timersCompleted += 1
+                try? modelContext.save()
                 
                 showingSheet = true
             }

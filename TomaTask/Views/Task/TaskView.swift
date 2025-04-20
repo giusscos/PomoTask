@@ -22,6 +22,7 @@ enum TaskSheet: Identifiable {
 
 struct TaskView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) private var modelContext
     
     @State var store = Store()
     
@@ -53,6 +54,7 @@ struct TaskView: View {
     @State private var isRunning: Bool = false
     @State private var pauseTime: Bool = false
     @State private var repetition: Int = 0
+    @State private var initialTime: TimeInterval = 0
     
     var maxDuration : TimeInterval {
         Double(task.maxDuration * 60)
@@ -251,15 +253,23 @@ struct TaskView: View {
             heigth = screenSize
         }
         
+        initialTime = time
+        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        stats.timersStarted += 1
+        
+        try? modelContext.save()
+        
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if(time > 0) {
                 isRunning = true
                 
+                stats.totalFocusTime += 1
+                
                 time -= 1
                 
-                if(pauseTime) {
+                if(pauseTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(maxDuration / 1)
-                } else {
+                } else if (!pauseTime && colorMode == .solid) {
                     heigth -= screenSize / CGFloat(maxDuration / 1)
                 }
             } else {
@@ -267,6 +277,12 @@ struct TaskView: View {
                 
                 if pauseTime {
                     repetition += 1
+                    
+                    if task.repetition == repetition {
+                        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                        stats.timersCompleted += 1
+                        try? modelContext.save()
+                    }
                 }
                 
                 stopTimer()
@@ -279,7 +295,7 @@ struct TaskView: View {
             pauseTime = false
         }
         
-        if(alarmSound) {
+        if(alarmSound && time == 0) {
             playSound()
         }
         

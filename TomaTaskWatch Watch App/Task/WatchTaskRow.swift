@@ -1,47 +1,46 @@
 //
-//  TaskRow.swift
-//  TomaTask
+//  WatchTaskRow.swift
+//  TomaTaskWatch Watch App
 //
-//  Created by Giuseppe Cosenza on 27/09/24.
+//  Created by Giuseppe Cosenza on 20/04/25.
 //
 
 import SwiftUI
 
-struct TaskRow: View {
+struct WatchTaskRow: View {
     var task: TomaTask
     
     var body: some View {
-        VStack (alignment: .leading) {
+        VStack(alignment: .leading) {
             if(task.title != "") {
                 Text(task.title)
-                    .font(.title3)
+                    .font(.caption)
                     .fontWeight(.semibold)
                     .lineLimit(1)
             }
             
-            HStack (alignment: .lastTextBaseline, spacing: 0) {
+            HStack(alignment: .lastTextBaseline, spacing: 0) {
                 Text("\(task.maxDuration)")
-                    .font(.largeTitle)
+                    .font(.caption)
                     .bold()
                     .foregroundStyle(Color.accentColor)
-                    .shadow(radius: 10, y: 4)
                 
                 Text(" min for ")
-                    .font(.headline)
+                    .font(.caption2)
                 
                 Text("\(task.repetition)")
-                    .font(.largeTitle)
+                    .font(.caption)
                     .bold()
                     .foregroundStyle(Color.accentColor)
-                    .shadow(radius: 10, y: 4)
                 
                 Text(" \(task.repetition == 1 ? "time" : "times")")
-                    .font(.headline)
+                    .font(.caption2)
             }
         }
     }
 }
 
+
 #Preview {
-    TaskRow(task: TomaTask())
+    WatchTaskRow(task: TomaTask())
 }

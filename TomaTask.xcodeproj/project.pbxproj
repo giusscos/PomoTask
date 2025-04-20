@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		684676262CD16C6000E904A5 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 684676252CD16C6000E904A5 /* StoreKit.framework */; };
+		68CD84782DB5626900C5BBA7 /* TomaTaskWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 68CD846E2DB5626800C5BBA7 /* TomaTaskWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,13 +26,35 @@
 			remoteGlobalIDString = 68617FBF2CA43D28003E906E;
 			remoteInfo = TomaTask;
 		};
+		68CD84762DB5626900C5BBA7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68617FB82CA43D28003E906E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 68CD846D2DB5626800C5BBA7;
+			remoteInfo = "TomaTaskWatch Watch App";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		68CD847C2DB5626900C5BBA7 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				68CD84782DB5626900C5BBA7 /* TomaTaskWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		684676252CD16C6000E904A5 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		68617FC02CA43D28003E906E /* TomaTask.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomaTask.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68617FD02CA43D2A003E906E /* TomaTaskTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomaTaskTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		68617FDA2CA43D2A003E906E /* TomaTaskUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomaTaskUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		68CD846E2DB5626800C5BBA7 /* TomaTaskWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TomaTaskWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,6 +65,16 @@
 			);
 			target = 68617FBF2CA43D28003E906E /* TomaTask */;
 		};
+		68CD84812DB5632300C5BBA7 /* Exceptions for "TomaTask" folder in "TomaTaskWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Model/Statistics.swift,
+				Model/Store.swift,
+				Model/SubTask.swift,
+				Model/TomaTask.swift,
+			);
+			target = 68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +82,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				6867A7C22CC0154B00864CDD /* Exceptions for "TomaTask" folder in "TomaTask" target */,
+				68CD84812DB5632300C5BBA7 /* Exceptions for "TomaTask" folder in "TomaTaskWatch Watch App" target */,
 			);
 			path = TomaTask;
 			sourceTree = "<group>";
@@ -61,6 +95,11 @@
 		68617FDD2CA43D2A003E906E /* TomaTaskUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = TomaTaskUITests;
+			sourceTree = "<group>";
+		};
+		68CD846F2DB5626800C5BBA7 /* TomaTaskWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "TomaTaskWatch Watch App";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,6 +127,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68CD846B2DB5626800C5BBA7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -105,6 +151,7 @@
 				68617FC22CA43D28003E906E /* TomaTask */,
 				68617FD32CA43D2A003E906E /* TomaTaskTests */,
 				68617FDD2CA43D2A003E906E /* TomaTaskUITests */,
+				68CD846F2DB5626800C5BBA7 /* TomaTaskWatch Watch App */,
 				684676242CD16C6000E904A5 /* Frameworks */,
 				68617FC12CA43D28003E906E /* Products */,
 			);
@@ -116,6 +163,7 @@
 				68617FC02CA43D28003E906E /* TomaTask.app */,
 				68617FD02CA43D2A003E906E /* TomaTaskTests.xctest */,
 				68617FDA2CA43D2A003E906E /* TomaTaskUITests.xctest */,
+				68CD846E2DB5626800C5BBA7 /* TomaTaskWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,10 +178,12 @@
 				68617FBC2CA43D28003E906E /* Sources */,
 				68617FBD2CA43D28003E906E /* Frameworks */,
 				68617FBE2CA43D28003E906E /* Resources */,
+				68CD847C2DB5626900C5BBA7 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				68CD84772DB5626900C5BBA7 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				68617FC22CA43D28003E906E /* TomaTask */,
@@ -191,6 +241,28 @@
 			productReference = 68617FDA2CA43D2A003E906E /* TomaTaskUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 68CD84792DB5626900C5BBA7 /* Build configuration list for PBXNativeTarget "TomaTaskWatch Watch App" */;
+			buildPhases = (
+				68CD846A2DB5626800C5BBA7 /* Sources */,
+				68CD846B2DB5626800C5BBA7 /* Frameworks */,
+				68CD846C2DB5626800C5BBA7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				68CD846F2DB5626800C5BBA7 /* TomaTaskWatch Watch App */,
+			);
+			name = "TomaTaskWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "TomaTaskWatch Watch App";
+			productReference = 68CD846E2DB5626800C5BBA7 /* TomaTaskWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -198,7 +270,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
 					68617FBF2CA43D28003E906E = {
@@ -211,6 +283,9 @@
 					68617FD92CA43D2A003E906E = {
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = 68617FBF2CA43D28003E906E;
+					};
+					68CD846D2DB5626800C5BBA7 = {
+						CreatedOnToolsVersion = 16.3;
 					};
 				};
 			};
@@ -231,6 +306,7 @@
 				68617FBF2CA43D28003E906E /* TomaTask */,
 				68617FCF2CA43D2A003E906E /* TomaTaskTests */,
 				68617FD92CA43D2A003E906E /* TomaTaskUITests */,
+				68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -251,6 +327,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		68617FD82CA43D2A003E906E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		68CD846C2DB5626800C5BBA7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -281,6 +364,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		68CD846A2DB5626800C5BBA7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -293,6 +383,11 @@
 			isa = PBXTargetDependency;
 			target = 68617FBF2CA43D28003E906E /* TomaTask */;
 			targetProxy = 68617FDB2CA43D2A003E906E /* PBXContainerItemProxy */;
+		};
+		68CD84772DB5626900C5BBA7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */;
+			targetProxy = 68CD84762DB5626900C5BBA7 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -562,6 +657,62 @@
 			};
 			name = Release;
 		};
+		68CD847A2DB5626900C5BBA7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TomaTaskWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = giusscos.TomaTask;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = giusscos.TomaTask.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		68CD847B2DB5626900C5BBA7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TomaTaskWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = giusscos.TomaTask;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = giusscos.TomaTask.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -597,6 +748,15 @@
 			buildConfigurations = (
 				68617FEB2CA43D2A003E906E /* Debug */,
 				68617FEC2CA43D2A003E906E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		68CD84792DB5626900C5BBA7 /* Build configuration list for PBXNativeTarget "TomaTaskWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				68CD847A2DB5626900C5BBA7 /* Debug */,
+				68CD847B2DB5626900C5BBA7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

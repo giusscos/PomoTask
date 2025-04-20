@@ -1,15 +1,15 @@
 //
-//  TomaTaskApp.swift
-//  TomaTask
+//  TomaTaskWatchApp.swift
+//  TomaTaskWatch Watch App
 //
-//  Created by Giuseppe Cosenza on 25/09/24.
+//  Created by Giuseppe Cosenza on 20/04/25.
 //
 
 import SwiftUI
 import SwiftData
 
 @main
-struct TomaTaskApp: App {
+struct TomaTaskWatch_Watch_AppApp: App {
     let container: ModelContainer
     
     init() {
@@ -22,7 +22,8 @@ struct TomaTaskApp: App {
     
     var body: some Scene {
         WindowGroup {
-            TabBarViewController()
-        }.modelContainer(container)
+            ContentView()
+        }
+        .modelContainer(container)
     }
 }

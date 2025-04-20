@@ -11,27 +11,18 @@ struct EditTask: View {
     @Environment(\.dismiss) var dismiss
     
     @Bindable var task: TomaTask
+    
     @State var newSubTask: String = ""
     
     var body: some View {
         VStack {
             Button("Back") {
                 dismiss()
-            }.padding()
+            }
+            .padding()
             .frame(maxWidth: .infinity, alignment: .topLeading)
             
             Form {
-                VStack(alignment: .leading) {
-                    Text("Category")
-                    Picker("Category", selection: $task.category) {
-                        ForEach(TomaTask.Category.allCases) { season in
-                            Text(season.rawValue).tag(season)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(SegmentedPickerStyle())
-                }
-                
                 TextField("Title", text: $task.title)
                     .foregroundStyle(.secondary)
                 

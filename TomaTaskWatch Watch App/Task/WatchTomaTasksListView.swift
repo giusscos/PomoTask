@@ -1,14 +1,14 @@
 //
-//  TiimerList.swift
-//  TomaTask
+//  WatchTomaTasksListView.swift
+//  TomaTaskWatch Watch App
 //
-//  Created by Giuseppe Cosenza on 26/09/24.
+//  Created by Giuseppe Cosenza on 20/04/25.
 //
 
 import SwiftUI
 import SwiftData
 
-struct TomaTasksList: View {
+struct WatchTomaTasksListView: View {
     @Environment(\.modelContext) var modelContext
     
     @Query var tomaTasks: [TomaTask]
@@ -17,19 +17,19 @@ struct TomaTasksList: View {
     @State var selectedCategory: TomaTask.Category = .study
     
     var body: some View {
-        VStack {
+        NavigationStack {
             List {
                 if (tomaTasks.isEmpty) {
-                    Text("No tasks in this category yet!")
-                        .font(.title3)
+                    Text("No tasks")
+                        .font(.caption)
                 } else {
                     ForEach(tomaTasks) { task in
                         NavigationLink {
-                            TaskView(task: task)
+                            WatchTaskView(task: task)
                         } label: {
-                            TaskRow(task: task)
+                            WatchTaskRow(task: task)
                         }
-                        .swipeActions (edge: .trailing) {
+                        .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 deleteTask(item: task)
                             } label: {
@@ -46,23 +46,19 @@ struct TomaTasksList: View {
                     }
                 }
             }
-            .listStyle(.plain)
             .navigationTitle("Timers")
             .toolbar {
-                ToolbarItemGroup (placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         addTask()
                     } label: {
                         Label("Add", systemImage: "plus")
-                            .labelStyle(.titleOnly)
+                            .labelStyle(.iconOnly)
                     }
                 }
             }
             .sheet(item: $selectedTask) { task in
-                EditTask(task: task)
-                    .onAppear() {
-                        task.category = selectedCategory
-                    }
+                WatchEditTask(task: task)
             }
         }
     }
@@ -79,5 +75,6 @@ struct TomaTasksList: View {
 }
 
 #Preview {
-    TomaTasksList(selectedTask: TomaTask())
-}
+    WatchTomaTasksListView()
+        .modelContainer(for: TomaTask.self, inMemory: true)
+} 

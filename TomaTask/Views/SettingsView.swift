@@ -17,7 +17,7 @@ struct SettingsView: View {
         List {
             Section() {
                 RoundedRectangle(cornerRadius: 48)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
                     .aspectRatio(16/9, contentMode: .fill)
                     .overlay {
@@ -43,7 +43,7 @@ struct SettingsView: View {
                             } label: {
                                 Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(Color.accentColor)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
                                     .background(.white)
