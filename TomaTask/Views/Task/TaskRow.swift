@@ -19,25 +19,21 @@ struct TaskRow: View {
                     .lineLimit(1)
             }
             
-            HStack (alignment: .lastTextBaseline, spacing: 0) {
-                Text("\(task.maxDuration)")
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundStyle(Color.accentColor)
-                    .shadow(radius: 10, y: 4)
-                
-                Text(" min for ")
-                    .font(.headline)
-                
-                Text("\(task.repetition)")
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundStyle(Color.accentColor)
-                    .shadow(radius: 10, y: 4)
-                
-                Text(" \(task.repetition == 1 ? "time" : "times")")
-                    .font(.headline)
-            }
+            Text("\(task.maxDuration)")
+                .font(.largeTitle)
+                .bold()
+                .foregroundStyle(Color.accentColor)
+            +
+            Text(" min for ")
+                .font(.headline)
+            +
+            Text("\(task.repetition)")
+                .font(.largeTitle)
+                .bold()
+                .foregroundStyle(Color.accentColor)
+            +
+            Text(" \(task.repetition == 1 ? "time" : "times")")
+                .font(.headline)
         }
     }
 }

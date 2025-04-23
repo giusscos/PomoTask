@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct TomaTaskApp: App {
@@ -15,6 +16,13 @@ struct TomaTaskApp: App {
     init() {
         do {
             container = try ModelContainer(for: TomaTask.self, SubTask.self, Statistics.self)
+            
+            // Request notification permission at app launch
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if let error = error {
+                    print("Error requesting notification permission: \(error.localizedDescription)")
+                }
+            }
         } catch {
             fatalError("Failed to initialize ModelContainer")
         }

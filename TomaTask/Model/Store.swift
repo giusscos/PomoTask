@@ -31,8 +31,14 @@ class Store {
         
         Task {
             await requestProducts()
-            
             await updateCustomerProductStatus()
+            
+            // Set up a timer to periodically check subscription status
+            Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+                Task {
+                    await self?.updateCustomerProductStatus()
+                }
+            }
         }
     }
     
@@ -63,7 +69,6 @@ class Store {
         do {
             // request from the app store using the product ids (hardcoded)
             subscriptions = try await Product.products(for: productIds)
-            print(subscriptions)
         } catch {
             print("Failed product request from app store server: \(error)")
         }
@@ -107,9 +112,12 @@ class Store {
     
     @MainActor
     func updateCustomerProductStatus() async {
+        // Clear existing subscriptions before checking
+        purchasedSubscriptions.removeAll()
+        
         for await result in Transaction.currentEntitlements {
             do {
-                //Check whether the transaction is verified. If it isn’t, catch `failedVerification` error.
+                //Check whether the transaction is verified. If it isn't, catch `failedVerification` error.
                 let transaction = try checkVerified(result)
                 
                 switch transaction.productType {
@@ -124,6 +132,22 @@ class Store {
                 await transaction.finish()
             } catch {
                 print("failed updating products")
+            }
+        }
+        
+        // Also check for any active subscriptions
+        for await result in Transaction.all {
+            do {
+                let transaction = try checkVerified(result)
+                if transaction.productType == .autoRenewable {
+                    if let subscription = subscriptions.first(where: {$0.id == transaction.productID}) {
+                        if !purchasedSubscriptions.contains(where: {$0.id == subscription.id}) {
+                            purchasedSubscriptions.append(subscription)
+                        }
+                    }
+                }
+            } catch {
+                print("failed checking all transactions")
             }
         }
     }

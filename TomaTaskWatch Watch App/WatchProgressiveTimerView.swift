@@ -136,40 +136,27 @@ struct WatchFeedbackSheet: View {
             Text("How do you feel?")
                 .font(.headline)
             
-            Button {
+            Button(role: .destructive) {
                 takeABreak()
             } label: {
                 Text("I need a break")
-                    .padding(.vertical, 4)
                     .frame(maxWidth: .infinity)
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
             }
             
             Button {
                 useTheSameTime()
             } label: {
                 Text("I need less time")
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
             }
+            .tint(.gray)
             
             Button {
                 increaseTime()
             } label: {
                 Text("I'm in the flow")
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
             }
+            .tint(Color.blue)
         }
-        .padding()
     }
     
     func takeABreak() {
@@ -199,6 +186,7 @@ struct WatchFeedbackSheet: View {
 }
 
 #Preview {
-    WatchProgressiveTimerView()
-        .modelContainer(for: TomaTask.self, inMemory: true)
+    WatchFeedbackSheet(selectedTime: .constant(0), breakTime: .constant(false))
+//    WatchProgressiveTimerView()
+//        .modelContainer(for: TomaTask.self, inMemory: true)
 } 

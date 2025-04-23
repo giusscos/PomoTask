@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AudioToolbox
+import UserNotifications
 
 var defaultTimeStart: Double = 5 * 60
 var defaultMinSeconds: Double = 3 * 60
@@ -14,8 +15,8 @@ var defaultMaxSeconds: Double = 25 * 60
 
 struct ProgressiveTimerView: View {
     enum ColorMode: String, CaseIterable, Identifiable {
-        case solid = "Solid Color"
-        case mesh = "Mesh Gradient"
+        case solid = "Solid"
+        case mesh = "Gradient"
         var id: String { self.rawValue }
     }
     
@@ -53,6 +54,11 @@ struct ProgressiveTimerView: View {
     @State private var isRunning: Bool = false
     @State private var isBreakTime: Bool = false
     @State private var initialTime: TimeInterval = 0
+    
+    // Background timer state
+    @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+    @State private var backgroundTime: TimeInterval = 0
+    @State private var backgroundStartDate: Date?
     
     var isSubscribed: Bool {
         !store.purchasedSubscriptions.isEmpty
@@ -152,6 +158,17 @@ struct ProgressiveTimerView: View {
         }
         .onDisappear() {
             resetTimer()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            if isRunning {
+                startBackgroundTimer()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            if isRunning {
+                stopBackgroundTimer()
+                updateTimerFromBackground()
+            }
         }
     }
     
@@ -273,7 +290,67 @@ struct ProgressiveTimerView: View {
     func playSound() {
         AudioServicesPlaySystemSound(1005)
     }
- }
+    
+    private func startBackgroundTimer() {
+        backgroundStartDate = Date()
+        backgroundTime = time
+        
+        // Start background task
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [self] in
+            endBackgroundTask()
+        }
+        
+        // Schedule notification for timer completion
+        scheduleNotification(for: time)
+    }
+    
+    private func stopBackgroundTimer() {
+        endBackgroundTask()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+    
+    private func endBackgroundTask() {
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+    
+    private func updateTimerFromBackground() {
+        guard let startDate = backgroundStartDate else { return }
+        
+        let elapsedTime = Date().timeIntervalSince(startDate)
+        time = max(0, backgroundTime - elapsedTime)
+        
+        if time == 0 {
+            handleTimerCompletion()
+        }
+    }
+    
+    private func scheduleNotification(for timeInterval: TimeInterval) {
+        let content = UNMutableNotificationContent()
+        content.title = isBreakTime ? "Break Time Complete" : "Focus Time Complete"
+        content.body = "Your \(isBreakTime ? "break" : "focus") session has ended."
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
+        let request = UNNotificationRequest(identifier: "timerCompletion", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request)
+    }
+    
+    private func handleTimerCompletion() {
+        if alarmSound {
+            playSound()
+        }
+        
+        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        stats.timersCompleted += 1
+        try? modelContext.save()
+        
+        showingSheet = true
+    }
+}
 
 struct FeedbackSheet: View {
  @Environment(\.dismiss) var dismiss

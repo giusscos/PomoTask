@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AudioToolbox
+import UserNotifications
 
 enum TaskSheet: Identifiable {
     case tasks
@@ -55,6 +56,11 @@ struct TaskView: View {
     @State private var pauseTime: Bool = false
     @State private var repetition: Int = 0
     @State private var initialTime: TimeInterval = 0
+    
+    // Background timer state
+    @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+    @State private var backgroundTime: TimeInterval = 0
+    @State private var backgroundStartDate: Date?
     
     var maxDuration : TimeInterval {
         Double(task.maxDuration * 60)
@@ -168,6 +174,9 @@ struct TaskView: View {
             
             // Load saved colors when the view appears
             loadSavedColors()
+        }
+        .onDisappear() {
+            stopTimer()
         }
         .navigationBarBackButtonHidden()
         .toolbar(hideUI ? .hidden : .visible, for: .tabBar)
@@ -321,6 +330,70 @@ struct TaskView: View {
     
     func playSound() {
         AudioServicesPlaySystemSound(1005)
+    }
+    
+    private func startBackgroundTimer() {
+        backgroundStartDate = Date()
+        backgroundTime = time
+        
+        // Start background task
+        backgroundTask = UIApplication.shared.beginBackgroundTask { [self] in
+            endBackgroundTask()
+        }
+        
+        // Schedule notification for timer completion
+        scheduleNotification(for: time)
+    }
+    
+    private func stopBackgroundTimer() {
+        endBackgroundTask()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+    
+    private func endBackgroundTask() {
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+    
+    private func updateTimerFromBackground() {
+        guard let startDate = backgroundStartDate else { return }
+        
+        let elapsedTime = Date().timeIntervalSince(startDate)
+        time = max(0, backgroundTime - elapsedTime)
+        
+        if time == 0 {
+            handleTimerCompletion()
+        }
+    }
+    
+    private func scheduleNotification(for timeInterval: TimeInterval) {
+        let content = UNMutableNotificationContent()
+        content.title = pauseTime ? "Break Time Complete" : "Focus Time Complete"
+        content.body = "Your \(pauseTime ? "break" : "focus") session has ended."
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
+        let request = UNNotificationRequest(identifier: "timerCompletion", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request)
+    }
+    
+    private func handleTimerCompletion() {
+        pauseTime.toggle()
+        
+        if pauseTime {
+            repetition += 1
+            
+            if task.repetition == repetition {
+                let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                stats.timersCompleted += 1
+                try? modelContext.save()
+            }
+        }
+        
+        stopTimer()
     }
 }
 

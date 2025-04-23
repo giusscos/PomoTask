@@ -10,16 +10,23 @@ import SwiftData
 import Charts
 
 struct WatchStatisticsView: View {
-    @Environment(\.modelContext) private var modelContext
-
-    @Query private var statistics: [Statistics]
-    
-    @State private var selectedTimeRange: TimeRange = .day
-    
     enum TimeRange: String, CaseIterable {
         case day = "Today"
         case week = "Week"
         case month = "Month"
+    }
+
+    @Environment(\.modelContext) private var modelContext
+    
+    @State var store = Store()
+
+    @Query private var statistics: [Statistics]
+    
+    @State private var selectedTimeRange: TimeRange = .day
+    @State private var showingPaywall = false
+    
+    var isSubscribed: Bool {
+        !store.purchasedSubscriptions.isEmpty
     }
     
     var filteredStatistics: [Statistics] {
@@ -46,6 +53,17 @@ struct WatchStatisticsView: View {
     }
     
     var body: some View {
+        Group {
+            if isSubscribed {
+                statisticsContent
+            } else {
+                paywallContent
+            }
+        }
+        .navigationTitle("Stats")
+    }
+    
+    private var statisticsContent: some View {
         List {
             Section {
                 Picker("Time Range", selection: $selectedTimeRange) {
@@ -113,7 +131,23 @@ struct WatchStatisticsView: View {
                 }
             }
         }
-        .navigationTitle("Stats")
+    }
+    
+    private var paywallContent: some View {
+        ScrollView {
+            Image(systemName: "chart.bar.fill")
+                .font(.title)
+                .foregroundColor(Color.accentColor)
+            
+            Text("Statistics")
+                .font(.title2)
+                .bold()
+            
+            Text("Track your productivity and progress with detailed statistics. Upgrade to Pro on your iPhone to unlock this feature.")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
     }
     
     // MARK: - Helper Methods
@@ -133,14 +167,39 @@ struct WatchStatisticsChartView: View {
     let statistics: [Statistics]
     let timeRange: WatchStatisticsView.TimeRange
     
+    private var aggregatedStatistics: [Statistics] {
+        let calendar = Calendar.current
+        
+        switch timeRange {
+        case .day:
+            return statistics
+        case .week, .month:
+            // Group statistics by day
+            let groupedStats = Dictionary(grouping: statistics) { stat in
+                calendar.startOfDay(for: stat.date)
+            }
+            
+            // Aggregate statistics for each day
+            return groupedStats.map { (date, stats) in
+                let aggregated = Statistics(date: date)
+                aggregated.timersStarted = stats.reduce(0) { $0 + $1.timersStarted }
+                aggregated.timersCompleted = stats.reduce(0) { $0 + $1.timersCompleted }
+                aggregated.subtasksCompleted = stats.reduce(0) { $0 + $1.subtasksCompleted }
+                aggregated.totalFocusTime = stats.reduce(0) { $0 + $1.totalFocusTime }
+                return aggregated
+            }.sorted { $0.date < $1.date }
+        }
+    }
+    
     var body: some View {
         Chart {
-            ForEach(statistics) { stat in
+            ForEach(aggregatedStatistics) { stat in
                 BarMark(
                     x: .value("Date", stat.date, unit: timeRange == .day ? .hour : .day),
                     y: .value("Focus Time", stat.totalFocusTime / 60)
                 )
                 .foregroundStyle(Color.accentColor.gradient)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
         .chartXScale(domain: getXAxisDomain())
@@ -156,14 +215,6 @@ struct WatchStatisticsChartView: View {
                 AxisValueLabel("\(value.index * 5) min")
             }
         }
-        .chartYScale(domain: 0...maxYValue)
-        .padding(.vertical)
-    }
-    
-    private var maxYValue: Double {
-        let maxMinutes = statistics.map { $0.totalFocusTime / 60 }.max() ?? 0
-        // Round up to the next multiple of 5
-        return ceil(maxMinutes / 5) * 5
     }
     
     private func getXAxisDomain() -> ClosedRange<Date> {

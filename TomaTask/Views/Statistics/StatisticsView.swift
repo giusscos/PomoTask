@@ -175,9 +175,33 @@ struct StatisticsChartView: View {
     let statistics: [Statistics]
     let timeRange: StatisticsView.TimeRange
     
+    private var aggregatedStatistics: [Statistics] {
+        let calendar = Calendar.current
+        
+        switch timeRange {
+        case .day:
+            return statistics
+        case .week, .month:
+            // Group statistics by day
+            let groupedStats = Dictionary(grouping: statistics) { stat in
+                calendar.startOfDay(for: stat.date)
+            }
+            
+            // Aggregate statistics for each day
+            return groupedStats.map { (date, stats) in
+                let aggregated = Statistics(date: date)
+                aggregated.timersStarted = stats.reduce(0) { $0 + $1.timersStarted }
+                aggregated.timersCompleted = stats.reduce(0) { $0 + $1.timersCompleted }
+                aggregated.subtasksCompleted = stats.reduce(0) { $0 + $1.subtasksCompleted }
+                aggregated.totalFocusTime = stats.reduce(0) { $0 + $1.totalFocusTime }
+                return aggregated
+            }.sorted { $0.date < $1.date }
+        }
+    }
+    
     var body: some View {
         Chart {
-            ForEach(statistics) { stat in
+            ForEach(aggregatedStatistics) { stat in
                 BarMark(
                     x: .value("Date", stat.date, unit: timeRange == .day ? .hour : .day),
                     y: .value("Focus Time", stat.totalFocusTime / 60)
