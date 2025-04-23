@@ -46,7 +46,10 @@ struct StatisticsView: View {
     
     var body: some View {
         Group {
-            if isSubscribed {
+            if store.purchasedSubscriptions.isEmpty {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isSubscribed {
                 statisticsContent
             } else {
                 paywallContent
