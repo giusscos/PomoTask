@@ -5,6 +5,7 @@ import Charts
 struct StatisticsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var statistics: [Statistics]
+    
     @State var store = Store()
     
     @State private var selectedTimeRange: TimeRange = .week
@@ -46,10 +47,7 @@ struct StatisticsView: View {
     
     var body: some View {
         Group {
-            if store.purchasedSubscriptions.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isSubscribed {
+            if isSubscribed {
                 statisticsContent
             } else {
                 paywallContent

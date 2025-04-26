@@ -54,10 +54,7 @@ struct WatchStatisticsView: View {
     
     var body: some View {
         Group {
-            if store.purchasedSubscriptions.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if isSubscribed {
+            if isSubscribed {
                 statisticsContent
             } else {
                 paywallContent
@@ -128,6 +125,7 @@ struct WatchStatisticsView: View {
                             statistics: filteredStatistics,
                             timeRange: selectedTimeRange
                         )
+                        .padding(.vertical)
                     }
                 } header: {
                     Text("Focus time")
@@ -202,7 +200,6 @@ struct WatchStatisticsChartView: View {
                     y: .value("Focus Time", stat.totalFocusTime / 60)
                 )
                 .foregroundStyle(Color.accentColor.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
         .chartXScale(domain: getXAxisDomain())

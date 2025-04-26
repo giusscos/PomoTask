@@ -238,12 +238,13 @@ struct ProgressiveTimerView: View {
                 handleMeshAnimation()
             }
             
-            stats.totalFocusTime += 1
             
             if(time > 0) {
                 isRunning = true
                 
                 time -= 1
+                
+                stats.totalFocusTime += 1
                 
                 if(isBreakTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(selectedTime / 1)

@@ -37,7 +37,7 @@ struct TimerActions: View {
                 Button {
                     alarmSound.toggle()
                 } label: {
-                    Label("Toggle sound", systemImage: alarmSound ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    Label("Toggle sound", systemImage: alarmSound ? "speaker.fill" : "speaker.slash.fill")
                         .labelStyle(.iconOnly)
                         .contentTransition(.symbolEffect(.replace))
                         .padding(8)

@@ -33,29 +33,24 @@ struct SettingsView: View {
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                             
-                            if store.purchasedSubscriptions.isEmpty {
-                                ProgressView()
-                                    .tint(.white)
-                            } else {
-                                Button {
-                                    if store.purchasedSubscriptions.isEmpty {
-                                        UIApplication.shared.setAlternateIconName(defaultAppIcon)
-                                        showSheet.toggle()
-                                    } else {
-                                        showManageSheet.toggle()
-                                    }
-                                } label: {
-                                    Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(Color.accentColor)
-                                        .padding(.horizontal)
-                                        .padding(.vertical, 8)
-                                        .background(.white)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                                        .shadow(radius: 10, x: 0, y: 4)
+                            Button {
+                                if store.purchasedSubscriptions.isEmpty {
+                                    UIApplication.shared.setAlternateIconName(defaultAppIcon)
+                                    showSheet.toggle()
+                                } else {
+                                    showManageSheet.toggle()
                                 }
-                                .padding(.vertical)
+                            } label: {
+                                Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.accentColor)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .background(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .shadow(radius: 10, x: 0, y: 4)
                             }
+                            .padding(.vertical)
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 8)

@@ -22,6 +22,7 @@ let defaultAppIcon = "AppIcon"
 
 struct TabBarViewController: View {
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
+    @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew: Bool = false
     
     var body: some View {
         VStack {
@@ -53,6 +54,9 @@ struct TabBarViewController: View {
         }
         .onAppear() {
             UITextField.appearance().clearButtonMode = .whileEditing
+        }
+        .fullScreenCover(isPresented: .constant(!hasSeenWhatsNew)) {
+            WhatsNewView()
         }
     }
 }

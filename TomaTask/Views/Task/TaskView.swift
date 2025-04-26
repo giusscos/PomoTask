@@ -272,9 +272,9 @@ struct TaskView: View {
             if(time > 0) {
                 isRunning = true
                 
-                stats.totalFocusTime += 1
-                
                 time -= 1
+                
+                stats.totalFocusTime += 1
                 
                 if(pauseTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(maxDuration / 1)
