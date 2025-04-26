@@ -39,9 +39,6 @@ struct ColorCustomizationView: View {
                 .onChange(of: colorMode) { _, _ in
                     onColorChange()
                 }
-                Text("Customize Colors")
-                    .font(.title2)
-                    .fontWeight(.bold)
                 
                 if colorMode == .mesh && isSubscribed {
                     Picker("Select Color", selection: $selectedColorIndex) {

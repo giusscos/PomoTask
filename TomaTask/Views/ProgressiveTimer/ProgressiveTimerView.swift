@@ -142,7 +142,7 @@ struct ProgressiveTimerView: View {
                 onColorChange: saveColors
             )
             .presentationDragIndicator(.visible)
-            .presentationDetents([.medium])
+            .presentationDetents([UIDevice.current.userInterfaceIdiom == .pad ? .large : .medium])
             .presentationCornerRadius(32)
             .presentationBackground(.thinMaterial)
         }
