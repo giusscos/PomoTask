@@ -4,9 +4,8 @@ import Charts
 
 struct StatisticsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(Store.self) private var store
     @Query private var statistics: [Statistics]
-    
-    @State var store = Store()
     
     @State private var selectedTimeRange: TimeRange = .week
     @State private var selectedDate = Date()
@@ -302,5 +301,6 @@ struct StatCard: View {
 #Preview {
     NavigationStack {
         StatisticsView()
+            .environment(Store())
     }
 } 

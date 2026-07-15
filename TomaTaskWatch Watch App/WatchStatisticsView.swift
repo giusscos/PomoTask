@@ -17,8 +17,7 @@ struct WatchStatisticsView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
-    
-    @State var store = Store()
+    @Environment(Store.self) private var store
 
     @Query private var statistics: [Statistics]
     
@@ -288,5 +287,6 @@ struct WatchStatRow: View {
 
 #Preview {
     WatchStatisticsView()
+        .environment(Store())
         .modelContainer(for: TomaTask.self, inMemory: true)
 } 

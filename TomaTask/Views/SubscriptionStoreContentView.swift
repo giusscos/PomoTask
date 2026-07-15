@@ -9,10 +9,10 @@ import SwiftUI
 import StoreKit
 
 struct SubscriptionStoreContentView: View {
-    @State var store = Store()
+    @Environment(Store.self) private var store
     
     var body: some View {
-        SubscriptionStoreView(groupID: Store().groupId) {
+        SubscriptionStoreView(groupID: store.groupId) {
             List {
                 Section {
                     VStack (spacing: 32) {
@@ -64,4 +64,5 @@ struct SubscriptionStoreContentView: View {
 
 #Preview {
     SubscriptionStoreContentView()
+        .environment(Store())
 }

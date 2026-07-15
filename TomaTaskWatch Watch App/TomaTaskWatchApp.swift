@@ -11,6 +11,7 @@ import SwiftData
 @main
 struct TomaTaskWatch_Watch_AppApp: App {
     let container: ModelContainer
+    @State private var store = Store()
     
     init() {
         do {
@@ -23,6 +24,7 @@ struct TomaTaskWatch_Watch_AppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(store)
         }
         .modelContainer(container)
     }

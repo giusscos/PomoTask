@@ -1,12 +1,11 @@
 //
-//  TomaTaskView.swift
+//  TaskView.swift
 //  TomaTask
 //
 //  Created by Giuseppe Cosenza on 27/09/24.
 //
 
 import SwiftUI
-import AudioToolbox
 import UserNotifications
 
 enum TaskSheet: Identifiable {
@@ -24,14 +23,12 @@ enum TaskSheet: Identifiable {
 struct TaskView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.modelContext) private var modelContext
-    
-    @State var store = Store()
+    @Environment(Store.self) private var store
     
     @State var task: TomaTask
     
     @State var hideUI: Bool = false
     @State var dimDisplay: Bool = false
-    @State var alarmSound: Bool = true
     
     @State private var activeSheet: TaskSheet?
     
@@ -56,6 +53,10 @@ struct TaskView: View {
     @State private var pauseTime: Bool = false
     @State private var repetition: Int = 0
     @State private var initialTime: TimeInterval = 0
+    
+    // Accrue focus seconds locally; flush to SwiftData on session boundaries
+    @State private var pendingFocusSeconds: TimeInterval = 0
+    @State private var sessionStats: Statistics?
     
     // Background timer state
     @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
@@ -143,7 +144,7 @@ struct TaskView: View {
                 .foregroundStyle(.primary)
                 .hideUIAnimation(hideUI: hideUI)
                 
-                TimerActions(alarmSound: $alarmSound, dimDisplay: $dimDisplay, showingColorCustomization: Binding(
+                TimerActions(dimDisplay: $dimDisplay, showingColorCustomization: Binding(
                     get: { self.activeSheet == .colorCustomization },
                     set: { if $0 { self.activeSheet = .colorCustomization } else { self.activeSheet = nil } }
                 ))
@@ -178,6 +179,22 @@ struct TaskView: View {
         .onDisappear() {
             stopTimer()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            if isRunning {
+                startBackgroundTimer()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            if isRunning {
+                stopBackgroundTimer()
+                updateTimerFromBackground()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
+            guard let path = notification.userInfo?["path"] as? String, path == "pause", isRunning else { return }
+            isRunning = false
+            stopTimer()
+        }
         .navigationBarBackButtonHidden()
         .toolbar(hideUI ? .hidden : .visible, for: .tabBar)
         .sheet(item: $activeSheet) { sheet in
@@ -207,52 +224,41 @@ struct TaskView: View {
     
     // Load saved colors from AppStorage
     private func loadSavedColors() {
-        meshColor1 = hexStringToColor(meshColor1Hex)
-        meshColor2 = hexStringToColor(meshColor2Hex)
-        meshColor3 = hexStringToColor(meshColor3Hex)
+        meshColor1 = Color.fromHexString(meshColor1Hex)
+        meshColor2 = Color.fromHexString(meshColor2Hex)
+        meshColor3 = Color.fromHexString(meshColor3Hex)
         colorMode = storedColorMode == "mesh" ? .mesh : .solid
     }
     
     // Save colors to AppStorage
     private func saveColors() {
-        meshColor1Hex = colorToHexString(meshColor1)
-        meshColor2Hex = colorToHexString(meshColor2)
-        meshColor3Hex = colorToHexString(meshColor3)
+        meshColor1Hex = meshColor1.toHexString()
+        meshColor2Hex = meshColor2.toHexString()
+        meshColor3Hex = meshColor3.toHexString()
         storedColorMode = colorMode == .mesh ? "mesh" : "solid"
-    }
-    
-    // Convert Color to Hex String
-    private func colorToHexString(_ color: Color) -> String {
-        let uiColor = UIColor(color)
-        let components = uiColor.cgColor.components ?? [0, 0, 0, 0]
-        let r: CGFloat = components[0]
-        let g: CGFloat = components[1]
-        let b: CGFloat = components[2]
-        
-        let hexString = String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
-        return hexString
-    }
-    
-    // Convert Hex String to Color
-    private func hexStringToColor(_ hex: String) -> Color {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-        
-        var rgb: UInt64 = 0
-        
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-        
-        let r = Double((rgb & 0xFF0000) >> 16) / 255.0
-        let g = Double((rgb & 0x00FF00) >> 8) / 255.0
-        let b = Double(rgb & 0x0000FF) / 255.0
-        
-        return Color(red: r, green: g, blue: b)
     }
     
     func formattedTime () -> String {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    private func ensureSessionStats() -> Statistics {
+        if let sessionStats {
+            return sessionStats
+        }
+        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        sessionStats = stats
+        return stats
+    }
+    
+    private func flushFocusStats() {
+        guard pendingFocusSeconds > 0 else { return }
+        let stats = ensureSessionStats()
+        stats.totalFocusTime += pendingFocusSeconds
+        pendingFocusSeconds = 0
+        try? modelContext.save()
     }
     
     func startTimer() {
@@ -263,18 +269,34 @@ struct TaskView: View {
         }
         
         initialTime = time
-        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        let stats = ensureSessionStats()
         stats.timersStarted += 1
-        
         try? modelContext.save()
+        
+        LiveActivityManager.start(
+            taskTitle: task.title.isEmpty ? "Classic Timer" : task.title,
+            timeRemaining: time,
+            isBreak: pauseTime
+        )
+        
+        Task {
+            if SessionAlarmScheduler.hasActiveAlarm {
+                SessionAlarmScheduler.resume()
+            } else {
+                await SessionAlarmScheduler.schedule(
+                    duration: time,
+                    isBreak: pauseTime,
+                    title: task.title.isEmpty ? (pauseTime ? "Break complete" : "Focus complete") : task.title
+                )
+            }
+        }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if(time > 0) {
                 isRunning = true
                 
                 time -= 1
-                
-                stats.totalFocusTime += 1
+                pendingFocusSeconds += 1
                 
                 if(pauseTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(maxDuration / 1)
@@ -288,7 +310,8 @@ struct TaskView: View {
                     repetition += 1
                     
                     if task.repetition == repetition {
-                        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                        flushFocusStats()
+                        let stats = ensureSessionStats()
                         stats.timersCompleted += 1
                         try? modelContext.save()
                     }
@@ -300,24 +323,42 @@ struct TaskView: View {
     }
     
     func stopTimer() {
-        if(task.repetition == repetition){
+        flushFocusStats()
+        
+        let didComplete = time == 0
+        // Timer loop toggles pauseTime before calling stopTimer, so the finished
+        // phase is the opposite of the upcoming phase stored in pauseTime.
+        let finishedBreak = !pauseTime
+        
+        if task.repetition == repetition {
             pauseTime = false
         }
         
-        if(alarmSound && time == 0) {
-            playSound()
+        if didComplete {
+            Task { @MainActor in
+                SessionCompletionAlert.handleSessionFinished(isBreak: finishedBreak)
+            }
         }
         
         isRunning = false
         
         timer?.invalidate()
         
-        if(time == 0){
+        if didComplete {
+            LiveActivityManager.endAll()
             time = pauseTime ? pauseDuration : maxDuration
+        } else {
+            SessionAlarmScheduler.pause()
+            LiveActivityManager.update(timeRemaining: time, isBreak: pauseTime, isPaused: true)
         }
     }
     
     func restartTimer() {
+        flushFocusStats()
+        AlarmPlayer.shared.stop()
+        SessionAlarmScheduler.cancel()
+        LiveActivityManager.endAll()
+        
         isRunning = false
         
         repetition = 0
@@ -326,10 +367,7 @@ struct TaskView: View {
         
         time = maxDuration
         heigth = screenSize
-    }
-    
-    func playSound() {
-        AudioServicesPlaySystemSound(1005)
+        sessionStats = nil
     }
     
     private func startBackgroundTimer() {
@@ -341,13 +379,12 @@ struct TaskView: View {
             endBackgroundTask()
         }
         
-        // Schedule notification for timer completion
-        scheduleNotification(for: time)
+        SessionCompletionAlert.scheduleBackgroundNotification(after: time, isBreak: pauseTime)
     }
     
     private func stopBackgroundTimer() {
         endBackgroundTask()
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        SessionCompletionAlert.cancelPending()
     }
     
     private func endBackgroundTask() {
@@ -361,23 +398,15 @@ struct TaskView: View {
         guard let startDate = backgroundStartDate else { return }
         
         let elapsedTime = Date().timeIntervalSince(startDate)
+        pendingFocusSeconds += min(elapsedTime, backgroundTime)
         time = max(0, backgroundTime - elapsedTime)
+        backgroundStartDate = nil
         
         if time == 0 {
             handleTimerCompletion()
+        } else {
+            LiveActivityManager.update(timeRemaining: time, isBreak: pauseTime, isPaused: false)
         }
-    }
-    
-    private func scheduleNotification(for timeInterval: TimeInterval) {
-        let content = UNMutableNotificationContent()
-        content.title = pauseTime ? "Break Time Complete" : "Focus Time Complete"
-        content.body = "Your \(pauseTime ? "break" : "focus") session has ended."
-        content.sound = .default
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
-        let request = UNNotificationRequest(identifier: "timerCompletion", content: content, trigger: trigger)
-        
-        UNUserNotificationCenter.current().add(request)
     }
     
     private func handleTimerCompletion() {
@@ -387,7 +416,8 @@ struct TaskView: View {
             repetition += 1
             
             if task.repetition == repetition {
-                let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                flushFocusStats()
+                let stats = ensureSessionStats()
                 stats.timersCompleted += 1
                 try? modelContext.save()
             }
@@ -399,4 +429,5 @@ struct TaskView: View {
 
 #Preview {
     TaskView(task: TomaTask())
+        .environment(Store())
 }

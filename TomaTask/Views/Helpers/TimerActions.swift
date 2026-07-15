@@ -9,8 +9,8 @@ import SwiftUI
 
 struct TimerActions: View {
     @Environment(\.dismiss) var dismiss
-    
-    @Binding var alarmSound: Bool
+
+    @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @Binding var dimDisplay: Bool
     @Binding var showingColorCustomization: Bool
     var backButton: Bool = true
@@ -35,9 +35,13 @@ struct TimerActions: View {
                 }
                 
                 Button {
-                    alarmSound.toggle()
+                    alarmEnabled.toggle()
+                    if !alarmEnabled {
+                        AlarmPlayer.shared.stop()
+                        SessionAlarmScheduler.cancel()
+                    }
                 } label: {
-                    Label("Toggle sound", systemImage: alarmSound ? "speaker.fill" : "speaker.slash.fill")
+                    Label("Toggle alarm", systemImage: alarmEnabled ? "bell.and.waves.left.and.right.fill" : "bell.slash.fill")
                         .labelStyle(.iconOnly)
                         .contentTransition(.symbolEffect(.replace))
                         .padding(8)
@@ -46,7 +50,7 @@ struct TimerActions: View {
                         .background(.ultraThinMaterial)
                         .clipShape(Circle())
                         .shadow(radius: 10, x: 0, y: 4)
-                        .animation(.none, value: alarmSound)
+                        .animation(.none, value: alarmEnabled)
                 }
                 
                 Button {
@@ -89,5 +93,5 @@ struct TimerActions: View {
 }
 
 #Preview {
-    TimerActions(alarmSound: .constant(true), dimDisplay: .constant(true), showingColorCustomization: .constant(false))
+    TimerActions(dimDisplay: .constant(true), showingColorCustomization: .constant(false))
 }

@@ -63,4 +63,5 @@ struct TabBarViewController: View {
 
 #Preview {
     TabBarViewController()
+        .environment(Store())
 }

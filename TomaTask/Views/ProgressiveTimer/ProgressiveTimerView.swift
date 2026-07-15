@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AudioToolbox
 import UserNotifications
 
 var defaultTimeStart: Double = 5 * 60
@@ -21,11 +20,9 @@ struct ProgressiveTimerView: View {
     }
     
     @Environment(\.modelContext) private var modelContext
-    
-    @State var store = Store()
+    @Environment(Store.self) private var store
     
     @State var hideUI: Bool = false
-    @State var alarmSound: Bool = true
     @State var dimDisplay: Bool = false
     @State private var showingColorCustomization: Bool = false
     
@@ -54,6 +51,10 @@ struct ProgressiveTimerView: View {
     @State private var isRunning: Bool = false
     @State private var isBreakTime: Bool = false
     @State private var initialTime: TimeInterval = 0
+    
+    // Accrue focus seconds locally; flush to SwiftData on session boundaries
+    @State private var pendingFocusSeconds: TimeInterval = 0
+    @State private var sessionStats: Statistics?
     
     // Background timer state
     @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
@@ -85,7 +86,7 @@ struct ProgressiveTimerView: View {
                     }
                 }
                 
-                TimerActions(alarmSound: $alarmSound, dimDisplay: $dimDisplay, showingColorCustomization: $showingColorCustomization, backButton: false)
+                TimerActions(dimDisplay: $dimDisplay, showingColorCustomization: $showingColorCustomization, backButton: false)
                     .hideUIAnimation(hideUI: hideUI)
                 
                 VStack (spacing: 8) {
@@ -170,50 +171,27 @@ struct ProgressiveTimerView: View {
                 updateTimerFromBackground()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
+            guard let path = notification.userInfo?["path"] as? String, path == "pause", isRunning else { return }
+            isRunning = false
+            pauseTimer()
+        }
     }
     
     // Load saved colors from AppStorage
     private func loadSavedColors() {
-        meshColor1 = hexStringToColor(meshColor1Hex)
-        meshColor2 = hexStringToColor(meshColor2Hex)
-        meshColor3 = hexStringToColor(meshColor3Hex)
+        meshColor1 = Color.fromHexString(meshColor1Hex)
+        meshColor2 = Color.fromHexString(meshColor2Hex)
+        meshColor3 = Color.fromHexString(meshColor3Hex)
         colorMode = storedColorMode == "mesh" ? .mesh : .solid
     }
     
     // Save colors to AppStorage
     private func saveColors() {
-        meshColor1Hex = colorToHexString(meshColor1)
-        meshColor2Hex = colorToHexString(meshColor2)
-        meshColor3Hex = colorToHexString(meshColor3)
+        meshColor1Hex = meshColor1.toHexString()
+        meshColor2Hex = meshColor2.toHexString()
+        meshColor3Hex = meshColor3.toHexString()
         storedColorMode = colorMode == .mesh ? "mesh" : "solid"
-    }
-    
-    // Convert Color to Hex String
-    private func colorToHexString(_ color: Color) -> String {
-        let uiColor = UIColor(color)
-        let components = uiColor.cgColor.components ?? [0, 0, 0, 0]
-        let r: CGFloat = components[0]
-        let g: CGFloat = components[1]
-        let b: CGFloat = components[2]
-        
-        let hexString = String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
-        return hexString
-    }
-    
-    // Convert Hex String to Color
-    private func hexStringToColor(_ hex: String) -> Color {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-        
-        var rgb: UInt64 = 0
-        
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-        
-        let r = Double((rgb & 0xFF0000) >> 16) / 255.0
-        let g = Double((rgb & 0x00FF00) >> 8) / 255.0
-        let b = Double(rgb & 0x0000FF) / 255.0
-        
-        return Color(red: r, green: g, blue: b)
     }
     
     func formattedTime () -> String {
@@ -227,11 +205,46 @@ struct ProgressiveTimerView: View {
         meshValue2 = cos(.random(in: 0.0...1.0)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
     }
     
+    private func ensureSessionStats() -> Statistics {
+        if let sessionStats {
+            return sessionStats
+        }
+        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        sessionStats = stats
+        return stats
+    }
+    
+    private func flushFocusStats() {
+        guard pendingFocusSeconds > 0 else { return }
+        let stats = ensureSessionStats()
+        stats.totalFocusTime += pendingFocusSeconds
+        pendingFocusSeconds = 0
+        try? modelContext.save()
+    }
+    
     func startTimer() {
         initialTime = time
-        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        let stats = ensureSessionStats()
         stats.timersStarted += 1
         try? modelContext.save()
+        
+        LiveActivityManager.start(
+            taskTitle: isBreakTime ? "Break" : "Progressive Timer",
+            timeRemaining: time,
+            isBreak: isBreakTime
+        )
+        
+        Task {
+            if SessionAlarmScheduler.hasActiveAlarm {
+                SessionAlarmScheduler.resume()
+            } else {
+                await SessionAlarmScheduler.schedule(
+                    duration: time,
+                    isBreak: isBreakTime,
+                    title: isBreakTime ? "Break complete" : "Focus complete"
+                )
+            }
+        }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if colorMode == .mesh {
@@ -243,8 +256,7 @@ struct ProgressiveTimerView: View {
                 isRunning = true
                 
                 time -= 1
-                
-                stats.totalFocusTime += 1
+                pendingFocusSeconds += 1
                 
                 if(isBreakTime && colorMode == .solid) {
                     heigth += screenSize / CGFloat(selectedTime / 1)
@@ -253,13 +265,12 @@ struct ProgressiveTimerView: View {
                 }
             } else {
                 pauseTimer()
-                
-                if alarmSound {
-                    playSound()
+                Task { @MainActor in
+                    SessionCompletionAlert.handleSessionFinished(isBreak: isBreakTime)
                 }
                 
-                
-                let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                flushFocusStats()
+                let stats = ensureSessionStats()
                 stats.timersCompleted += 1
                 try? modelContext.save()
                 
@@ -269,27 +280,36 @@ struct ProgressiveTimerView: View {
     }
     
     func pauseTimer() {
+        flushFocusStats()
         isRunning = false
         timer?.invalidate()
         hideUI = false
+        
+        if time > 0 {
+            SessionAlarmScheduler.pause()
+            LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: true)
+        } else {
+            LiveActivityManager.endAll()
+        }
     }
     
     func resetTimer() {
-        pauseTimer()
+        flushFocusStats()
+        AlarmPlayer.shared.stop()
+        SessionAlarmScheduler.cancel()
+        isRunning = false
+        timer?.invalidate()
+        hideUI = false
+        LiveActivityManager.endAll()
         
         isBreakTime = false
-        
         time = defaultTimeStart
-        
         selectedTime = defaultTimeStart
+        sessionStats = nil
         
         if colorMode == .solid {
             heigth = screenSize
         }
-    }
-   
-    func playSound() {
-        AudioServicesPlaySystemSound(1005)
     }
     
     private func startBackgroundTimer() {
@@ -301,13 +321,12 @@ struct ProgressiveTimerView: View {
             endBackgroundTask()
         }
         
-        // Schedule notification for timer completion
-        scheduleNotification(for: time)
+        SessionCompletionAlert.scheduleBackgroundNotification(after: time, isBreak: isBreakTime)
     }
     
     private func stopBackgroundTimer() {
         endBackgroundTask()
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        SessionCompletionAlert.cancelPending()
     }
     
     private func endBackgroundTask() {
@@ -321,35 +340,31 @@ struct ProgressiveTimerView: View {
         guard let startDate = backgroundStartDate else { return }
         
         let elapsedTime = Date().timeIntervalSince(startDate)
+        pendingFocusSeconds += min(elapsedTime, backgroundTime)
         time = max(0, backgroundTime - elapsedTime)
+        backgroundStartDate = nil
         
         if time == 0 {
             handleTimerCompletion()
+        } else {
+            LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: false)
         }
-    }
-    
-    private func scheduleNotification(for timeInterval: TimeInterval) {
-        let content = UNMutableNotificationContent()
-        content.title = isBreakTime ? "Break Time Complete" : "Focus Time Complete"
-        content.body = "Your \(isBreakTime ? "break" : "focus") session has ended."
-        content.sound = .default
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
-        let request = UNNotificationRequest(identifier: "timerCompletion", content: content, trigger: trigger)
-        
-        UNUserNotificationCenter.current().add(request)
     }
     
     private func handleTimerCompletion() {
-        if alarmSound {
-            playSound()
+        Task { @MainActor in
+            SessionCompletionAlert.handleSessionFinished(isBreak: isBreakTime)
         }
         
-        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+        flushFocusStats()
+        let stats = ensureSessionStats()
         stats.timersCompleted += 1
         try? modelContext.save()
         
+        LiveActivityManager.endAll()
         showingSheet = true
+        isRunning = false
+        timer?.invalidate()
     }
 }
 
@@ -457,4 +472,5 @@ extension View {
 
 #Preview {
     ProgressiveTimerView()
+        .environment(Store())
 }

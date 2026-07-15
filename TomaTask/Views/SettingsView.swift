@@ -8,10 +8,13 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(Store.self) private var store
     @Binding var appIcon: String
     @State var showSheet: Bool = false
     @State var showManageSheet: Bool = false
-    @State var store = Store()
+
+    @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
+    @AppStorage(SessionAlertStorage.notificationEnabled) private var notificationEnabled = true
     
     var body: some View {
         List {
@@ -76,6 +79,44 @@ struct SettingsView: View {
                     }
                 }
             }
+
+            Section {
+                Toggle(isOn: $alarmEnabled) {
+                    Label("Alarm", systemImage: "bell.and.waves.left.and.right")
+                }
+                .onChange(of: alarmEnabled) { _, isEnabled in
+                    if isEnabled {
+                        Task {
+                            let authorized = await SessionAlarmScheduler.requestAuthorizationIfNeeded()
+                            if !authorized {
+                                alarmEnabled = false
+                                return
+                            }
+                            if !SessionAlarmScheduler.usesAlarmKit {
+                                AlarmPlayer.shared.play(preview: true)
+                            }
+                        }
+                    } else {
+                        AlarmPlayer.shared.stop()
+                        SessionAlarmScheduler.cancel()
+                    }
+                }
+
+                Toggle(isOn: $notificationEnabled) {
+                    Label("Session notification", systemImage: "app.badge")
+                }
+                .onChange(of: notificationEnabled) { _, isEnabled in
+                    if isEnabled {
+                        SessionCompletionAlert.requestNotificationPermissionIfNeeded()
+                    } else {
+                        SessionCompletionAlert.cancelPending()
+                    }
+                }
+            } header: {
+                Text("Session Alerts")
+            } footer: {
+                Text("Alarm uses AlarmKit for a Clock-style alert that breaks through Silent mode and Focus. Turn on Alarm in Settings and allow Alarms & Timers when prompted. Session notifications are optional banners and are skipped while AlarmKit is active.")
+            }
             
             Section {
                 if !store.purchasedSubscriptions.isEmpty {
@@ -111,5 +152,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(appIcon: .constant("AppIcon"), store: Store())
+    SettingsView(appIcon: .constant("AppIcon"))
+        .environment(Store())
 }

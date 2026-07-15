@@ -12,6 +12,7 @@ import UserNotifications
 @main
 struct TomaTaskApp: App {
     let container: ModelContainer
+    @State private var store = Store()
     
     init() {
         do {
@@ -31,6 +32,19 @@ struct TomaTaskApp: App {
     var body: some Scene {
         WindowGroup {
             TabBarViewController()
+                .environment(store)
+                .onOpenURL { url in
+                    guard url.scheme == "tomatask" else { return }
+                    NotificationCenter.default.post(
+                        name: .tomaTaskDeepLink,
+                        object: nil,
+                        userInfo: ["path": url.host ?? ""]
+                    )
+                }
         }.modelContainer(container)
     }
+}
+
+extension Notification.Name {
+    static let tomaTaskDeepLink = Notification.Name("tomaTaskDeepLink")
 }
