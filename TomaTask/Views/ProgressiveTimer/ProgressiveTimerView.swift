@@ -12,6 +12,41 @@ import UserNotifications
 var defaultTimeStart: Double = 5 * 60
 var defaultMinSeconds: Double = 3 * 60
 var defaultMaxSeconds: Double = 25 * 60
+private let defaultBreakMinSeconds: Double = 3 * 60
+private let defaultBreakMaxSeconds: Double = 8 * 60
+
+// MARK: - Duration helpers
+
+enum ProgressiveDuration {
+    static func increased(_ seconds: Double) -> Double {
+        min(seconds + defaultMinSeconds, defaultMaxSeconds)
+    }
+    
+    static func decreased(_ seconds: Double) -> Double {
+        max(seconds - defaultMinSeconds, defaultMinSeconds)
+    }
+    
+    /// ~20% of last focus, clamped to 3–8 minutes.
+    static func breakDuration(forFocusSeconds focus: Double) -> Double {
+        let raw = focus * 0.2
+        return min(max(raw, defaultBreakMinSeconds), defaultBreakMaxSeconds)
+    }
+    
+    /// Cut remaining by ~1/3, floor 1 minute.
+    static func shortenedRemaining(_ seconds: Double) -> Double {
+        max(seconds * (2.0 / 3.0), 60)
+    }
+    
+    static func minutesLabel(_ seconds: Double) -> String {
+        let mins = max(1, Int((seconds / 60).rounded()))
+        return "\(mins)′"
+    }
+}
+
+enum ProgressiveNextAction {
+    case none
+    case autoStart
+}
 
 struct ProgressiveTimerView: View {
     enum ColorMode: String, CaseIterable, Identifiable {
@@ -26,9 +61,13 @@ struct ProgressiveTimerView: View {
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage("preventScreenLock") private var preventScreenLock = true
     
-    @State private var showingSheet: Bool = false
+    @State private var showingFocusFeedback = false
+    @State private var showingStruggleSheet = false
+    @State private var awaitingPlayAfterBreak = false
+    @State private var nextAction: ProgressiveNextAction = .none
     
     @State private var selectedTime: Double = defaultTimeStart
+    @State private var lastFocusDuration: Double = defaultTimeStart
     @State private var timer: Timer?
     @State var time: TimeInterval = 0
     @State private var isRunning: Bool = false
@@ -53,6 +92,20 @@ struct ProgressiveTimerView: View {
     
     private var phaseDurationMinutes: Int {
         max(1, Int((selectedTime / 60).rounded()))
+    }
+    
+    private var toolbarSubtitle: String {
+        if awaitingPlayAfterBreak {
+            return "Break over · ready when you are"
+        }
+        if isBreakTime {
+            return "Break"
+        }
+        let next = ProgressiveDuration.increased(lastFocusDuration)
+        if next > lastFocusDuration {
+            return "Focus · building to \(ProgressiveDuration.minutesLabel(next))"
+        }
+        return "Focus · \(ProgressiveDuration.minutesLabel(lastFocusDuration))"
     }
     
     var body: some View {
@@ -105,17 +158,23 @@ struct ProgressiveTimerView: View {
                         .fontDesign(.rounded)
                         .lineLimit(1)
                     
-                    Text(isBreakTime ? "Break" : "Focus")
+                    Text(toolbarSubtitle)
                         .font(.subheadline.weight(.semibold))
                         .fontWidth(.condensed)
                         .opacity(0.75)
                         .textCase(.uppercase)
                         .tracking(1.2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .foregroundStyle(.white)
             }
             
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if isRunning && !isBreakTime {
+                    struggleButton
+                }
+                
                 Menu {
                     Button {
                         alarmEnabled.toggle()
@@ -146,7 +205,7 @@ struct ProgressiveTimerView: View {
                         .animation(.default, value: preventScreenLock)
                     }
                     
-                    if time != selectedTime || isRunning || isBreakTime {
+                    if time != selectedTime || isRunning || isBreakTime || awaitingPlayAfterBreak {
                         Button(role: .destructive) {
                             resetTimer()
                         } label: {
@@ -159,13 +218,27 @@ struct ProgressiveTimerView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSheet, onDismiss: {
-            time = selectedTime
-        }) {
-            FeedbackSheet(selectedTime: $selectedTime, breakTime: $isBreakTime)
+        .sheet(isPresented: $showingFocusFeedback, onDismiss: applyPostFeedbackState) {
+            FocusFeedbackSheet(
+                currentFocusSeconds: lastFocusDuration,
+                onFlow: { handleFlow() },
+                onABitMuch: { handleABitMuch() },
+                onNeedBreak: { handleNeedBreak() }
+            )
+            .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showingStruggleSheet) {
+            StruggleSheet(
+                onKeepGoing: { handleStruggleKeepGoing() },
+                onShorten: { handleStruggleShorten() },
+                onBreakNow: { handleStruggleBreakNow() }
+            )
+            .presentationDetents([.medium])
         }
         .onAppear {
             time = defaultTimeStart
+            selectedTime = defaultTimeStart
+            lastFocusDuration = defaultTimeStart
             UIApplication.shared.isIdleTimerDisabled = preventScreenLock
         }
         .onDisappear {
@@ -208,6 +281,7 @@ struct ProgressiveTimerView: View {
     private var playPauseButton: some View {
         Button {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            awaitingPlayAfterBreak = false
             isRunning.toggle()
             if isRunning {
                 startTimer()
@@ -226,11 +300,91 @@ struct ProgressiveTimerView: View {
         .accessibilityLabel(isRunning ? "Pause" : "Start")
     }
     
+    private var struggleButton: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            pauseTimer()
+            showingStruggleSheet = true
+        } label: {
+            Image(systemName: "exclamationmark.bubble")
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .accessibilityLabel("I'm struggling")
+    }
+    
     func formattedTime() -> String {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
+    
+    // MARK: - Feedback handlers
+    
+    private func handleFlow() {
+        let next = ProgressiveDuration.increased(lastFocusDuration)
+        lastFocusDuration = next
+        selectedTime = next
+        isBreakTime = false
+        nextAction = .autoStart
+        showingFocusFeedback = false
+    }
+    
+    private func handleABitMuch() {
+        let next = ProgressiveDuration.decreased(lastFocusDuration)
+        lastFocusDuration = next
+        selectedTime = next
+        isBreakTime = false
+        nextAction = .none
+        showingFocusFeedback = false
+    }
+    
+    private func handleNeedBreak() {
+        let breakSeconds = ProgressiveDuration.breakDuration(forFocusSeconds: lastFocusDuration)
+        selectedTime = breakSeconds
+        isBreakTime = true
+        nextAction = .autoStart
+        showingFocusFeedback = false
+    }
+    
+    private func applyPostFeedbackState() {
+        time = selectedTime
+        let shouldAutoStart = nextAction == .autoStart
+        nextAction = .none
+        if shouldAutoStart {
+            isRunning = true
+            startTimer()
+        }
+    }
+    
+    // MARK: - Struggle handlers
+    
+    private func handleStruggleKeepGoing() {
+        showingStruggleSheet = false
+        isRunning = true
+        startTimer()
+    }
+    
+    private func handleStruggleShorten() {
+        time = ProgressiveDuration.shortenedRemaining(time)
+        selectedTime = time
+        SessionAlarmScheduler.cancel()
+        showingStruggleSheet = false
+        isRunning = true
+        startTimer()
+    }
+    
+    private func handleStruggleBreakNow() {
+        let breakSeconds = ProgressiveDuration.breakDuration(forFocusSeconds: lastFocusDuration)
+        selectedTime = breakSeconds
+        time = breakSeconds
+        isBreakTime = true
+        SessionAlarmScheduler.cancel()
+        showingStruggleSheet = false
+        isRunning = true
+        startTimer()
+    }
+    
+    // MARK: - Stats
     
     private func ensureSessionStats() -> Statistics {
         if let sessionStats {
@@ -248,6 +402,8 @@ struct ProgressiveTimerView: View {
         pendingFocusSeconds = 0
         try? modelContext.save()
     }
+    
+    // MARK: - Timer
     
     func startTimer() {
         let stats = ensureSessionStats()
@@ -272,12 +428,15 @@ struct ProgressiveTimerView: View {
             }
         }
         
+        timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if time > 0 {
                 isRunning = true
                 
                 time -= 1
-                pendingFocusSeconds += 1
+                if !isBreakTime {
+                    pendingFocusSeconds += 1
+                }
             } else {
                 pauseTimer()
                 Task { @MainActor in
@@ -289,8 +448,23 @@ struct ProgressiveTimerView: View {
                 stats.timersCompleted += 1
                 try? modelContext.save()
                 
-                showingSheet = true
+                handlePhaseCompletion()
             }
+        }
+    }
+    
+    private func handlePhaseCompletion() {
+        if isBreakTime {
+            // Break over: restore last focus duration, wait for play
+            isBreakTime = false
+            selectedTime = lastFocusDuration
+            time = lastFocusDuration
+            awaitingPlayAfterBreak = true
+            isRunning = false
+        } else {
+            // Focus complete: ask how it felt
+            awaitingPlayAfterBreak = false
+            showingFocusFeedback = true
         }
     }
     
@@ -316,8 +490,13 @@ struct ProgressiveTimerView: View {
         LiveActivityManager.endAll()
         
         isBreakTime = false
+        awaitingPlayAfterBreak = false
+        showingFocusFeedback = false
+        showingStruggleSheet = false
+        nextAction = .none
         time = defaultTimeStart
         selectedTime = defaultTimeStart
+        lastFocusDuration = defaultTimeStart
         sessionStats = nil
     }
     
@@ -348,7 +527,9 @@ struct ProgressiveTimerView: View {
         guard let startDate = backgroundStartDate else { return }
         
         let elapsedTime = Date().timeIntervalSince(startDate)
-        pendingFocusSeconds += min(elapsedTime, backgroundTime)
+        if !isBreakTime {
+            pendingFocusSeconds += min(elapsedTime, backgroundTime)
+        }
         time = max(0, backgroundTime - elapsedTime)
         backgroundStartDate = nil
         
@@ -370,60 +551,52 @@ struct ProgressiveTimerView: View {
         try? modelContext.save()
 
         LiveActivityManager.endAll()
-        showingSheet = true
         isRunning = false
         timer?.invalidate()
+        handlePhaseCompletion()
     }
 }
 
-struct FeedbackSheet: View {
-    @Environment(\.dismiss) var dismiss
+// MARK: - Focus feedback
+
+struct FocusFeedbackSheet: View {
+    let currentFocusSeconds: Double
+    let onFlow: () -> Void
+    let onABitMuch: () -> Void
+    let onNeedBreak: () -> Void
     
-    @Binding var selectedTime: Double
-    @Binding var breakTime: Bool
+    private var flowNext: Double { ProgressiveDuration.increased(currentFocusSeconds) }
+    private var shorterNext: Double { ProgressiveDuration.decreased(currentFocusSeconds) }
+    private var breakNext: Double { ProgressiveDuration.breakDuration(forFocusSeconds: currentFocusSeconds) }
     
     var body: some View {
-        VStack {
-            Text("How do you feel?")
-                .font(.title)
-                .fontWeight(.semibold)
+        VStack(spacing: 24) {
+            Text("How focused did you feel?")
+                .font(.title2.weight(.semibold))
+                .fontDesign(.rounded)
+                .multilineTextAlignment(.center)
             
-            VStack {
-                Button {
-                    takeABreak()
-                } label: {
-                    Text("I need a break")
-                        .padding()
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
-                }
+            VStack(spacing: 12) {
+                feedbackButton(
+                    title: "In the flow",
+                    subtitle: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(flowNext)) · starts next",
+                    background: Color.accentColor,
+                    action: onFlow
+                )
                 
-                Button {
-                    useTheSameTime()
-                } label: {
-                    Text("I need less time")
-                        .padding()
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.gray)
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
-                }
+                feedbackButton(
+                    title: "A bit much",
+                    subtitle: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(shorterNext)) · tap play when ready",
+                    background: Color.gray,
+                    action: onABitMuch
+                )
                 
-                Button {
-                    increaseTime()
-                } label: {
-                    Text("I'm in the flow")
-                        .padding()
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
-                }
+                feedbackButton(
+                    title: "Need a break",
+                    subtitle: "\(ProgressiveDuration.minutesLabel(breakNext)) break · starts next",
+                    background: Color.red,
+                    action: onNeedBreak
+                )
             }
             .frame(maxWidth: 500)
         }
@@ -431,29 +604,97 @@ struct FeedbackSheet: View {
         .padding()
     }
     
-    func takeABreak() {
-        selectedTime = 5 * 60
-        setBreak()
+    private func feedbackButton(
+        title: String,
+        subtitle: String,
+        background: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.bold))
+                Text(subtitle)
+                    .font(.caption.weight(.medium))
+                    .opacity(0.9)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(background)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Struggle
+
+struct StruggleSheet: View {
+    let onKeepGoing: () -> Void
+    let onShorten: () -> Void
+    let onBreakNow: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("Take a breath")
+                .font(.title2.weight(.semibold))
+                .fontDesign(.rounded)
+            
+            Text("You're paused. What would help?")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            VStack(spacing: 12) {
+                struggleButton(
+                    title: "Keep going",
+                    subtitle: "Resume this focus block",
+                    background: Color.accentColor,
+                    action: onKeepGoing
+                )
+                
+                struggleButton(
+                    title: "Shorten remaining",
+                    subtitle: "Cut about a third, then resume",
+                    background: Color.gray,
+                    action: onShorten
+                )
+                
+                struggleButton(
+                    title: "Break now",
+                    subtitle: "Start a short break",
+                    background: Color.red,
+                    action: onBreakNow
+                )
+            }
+            .frame(maxWidth: 500)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding()
     }
     
-    func setNoBreak() {
-        breakTime = false
-        dismiss()
-    }
-    
-    func setBreak() {
-        breakTime = true
-        dismiss()
-    }
-    
-    func useTheSameTime() {
-        selectedTime = selectedTime - defaultMinSeconds <= defaultMinSeconds ? defaultMinSeconds : selectedTime - defaultMinSeconds
-        setNoBreak()
-    }
-    
-    func increaseTime() {
-        selectedTime = selectedTime + defaultMinSeconds <= defaultMaxSeconds ? selectedTime + defaultMinSeconds : defaultMaxSeconds
-        setNoBreak()
+    private func struggleButton(
+        title: String,
+        subtitle: String,
+        background: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.headline.weight(.bold))
+                Text(subtitle)
+                    .font(.caption.weight(.medium))
+                    .opacity(0.9)
+            }
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(background)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
