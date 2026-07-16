@@ -17,6 +17,7 @@ struct TomaTaskApp: App {
     init() {
         do {
             container = try ModelContainer(for: TomaTask.self, SubTask.self, Statistics.self)
+            container.mainContext.undoManager = UndoManager()
             
             // Request notification permission at app launch
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in

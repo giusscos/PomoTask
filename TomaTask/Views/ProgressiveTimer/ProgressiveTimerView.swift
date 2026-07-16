@@ -23,8 +23,8 @@ struct ProgressiveTimerView: View {
     @Environment(Store.self) private var store
     
     @State var hideUI: Bool = false
-    @State var dimDisplay: Bool = false
     @State private var showingColorCustomization: Bool = false
+    @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     
     @State private var showingSheet: Bool = false
     
@@ -86,9 +86,6 @@ struct ProgressiveTimerView: View {
                     }
                 }
                 
-                TimerActions(dimDisplay: $dimDisplay, showingColorCustomization: $showingColorCustomization, backButton: false)
-                    .hideUIAnimation(hideUI: hideUI)
-                
                 VStack (spacing: 8) {
                     Text(!isBreakTime ? "Focus time" : "Break time")
                         .font(.headline)
@@ -122,8 +119,32 @@ struct ProgressiveTimerView: View {
                 .hideUIAnimation(hideUI: hideUI)
             }
         }
-        .toolbar(hideUI ? .hidden : .visible, for: .tabBar)
-        .navigationBarBackButtonHidden(true)
+        .toolbar(hideUI ? .hidden : .visible, for: .navigationBar)
+        .onChange(of: hideUI) { _, hidden in animateTabBar(hidden: hidden) }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 4) {
+                    Button {
+                        alarmEnabled.toggle()
+                        if !alarmEnabled {
+                            AlarmPlayer.shared.stop()
+                            SessionAlarmScheduler.cancel()
+                        }
+                    } label: {
+                        Label("Toggle alarm", systemImage: alarmEnabled ? "bell.and.waves.left.and.right.fill" : "bell.slash.fill")
+                            .labelStyle(.iconOnly)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+
+                    Button {
+                        showingColorCustomization = true
+                    } label: {
+                        Label("Customize Colors", systemImage: "paintpalette.fill")
+                            .labelStyle(.iconOnly)
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showingSheet, onDismiss: {
             time = selectedTime
             
@@ -149,16 +170,16 @@ struct ProgressiveTimerView: View {
         }
         .onAppear(){
             time = defaultTimeStart
-            
             if colorMode == .solid {
                 heigth = screenSize
             }
-            
-            // Load saved colors when the view appears
             loadSavedColors()
+            UIApplication.shared.isIdleTimerDisabled = true
         }
         .onDisappear() {
+            animateTabBar(hidden: false)
             resetTimer()
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             if isRunning {
@@ -355,16 +376,37 @@ struct ProgressiveTimerView: View {
         Task { @MainActor in
             SessionCompletionAlert.handleSessionFinished(isBreak: isBreakTime)
         }
-        
+
         flushFocusStats()
         let stats = ensureSessionStats()
         stats.timersCompleted += 1
         try? modelContext.save()
-        
+
         LiveActivityManager.endAll()
         showingSheet = true
         isRunning = false
         timer?.invalidate()
+    }
+
+    private func animateTabBar(hidden: Bool) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = scene.windows.first(where: { $0.isKeyWindow }),
+              let tabBarController = findTabBarController(in: window.rootViewController) else { return }
+        let tabBar = tabBarController.tabBar
+        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0.2) {
+            tabBar.transform = hidden
+                ? CGAffineTransform(translationX: 0, y: tabBar.frame.height + tabBar.safeAreaInsets.bottom)
+                : .identity
+        }
+    }
+
+    private func findTabBarController(in vc: UIViewController?) -> UITabBarController? {
+        guard let vc else { return nil }
+        if let tbc = vc as? UITabBarController { return tbc }
+        for child in vc.children {
+            if let found = findTabBarController(in: child) { return found }
+        }
+        return nil
     }
 }
 

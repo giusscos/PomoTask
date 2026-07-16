@@ -28,15 +28,15 @@ struct TaskView: View {
     @State var task: TomaTask
     
     @State var hideUI: Bool = false
-    @State var dimDisplay: Bool = false
-    
+
     @State private var activeSheet: TaskSheet?
-    
+
     // AppStorage for colors using hex strings
     @AppStorage("meshColor1Hex") private var meshColor1Hex: String = "#000000" // Black
     @AppStorage("meshColor2Hex") private var meshColor2Hex: String = "#FFA500" // Orange
     @AppStorage("meshColor3Hex") private var meshColor3Hex: String = "#FF0000" // Red
     @AppStorage("colorMode") private var storedColorMode: String = "solid"
+    @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     
     // Derived state from AppStorage
     @State var meshColor1: Color = .black
@@ -144,12 +144,6 @@ struct TaskView: View {
                 .foregroundStyle(.primary)
                 .hideUIAnimation(hideUI: hideUI)
                 
-                TimerActions(dimDisplay: $dimDisplay, showingColorCustomization: Binding(
-                    get: { self.activeSheet == .colorCustomization },
-                    set: { if $0 { self.activeSheet = .colorCustomization } else { self.activeSheet = nil } }
-                ))
-                .hideUIAnimation(hideUI: hideUI)
-                
                 if(!task.unwrappedTasks.isEmpty) {
                     Button {
                         withAnimation {
@@ -172,12 +166,12 @@ struct TaskView: View {
         }
         .onAppear(){
             time = maxDuration
-            
-            // Load saved colors when the view appears
             loadSavedColors()
+            UIApplication.shared.isIdleTimerDisabled = true
         }
         .onDisappear() {
             stopTimer()
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             if isRunning {
@@ -195,8 +189,32 @@ struct TaskView: View {
             isRunning = false
             stopTimer()
         }
-        .navigationBarBackButtonHidden()
-        .toolbar(hideUI ? .hidden : .visible, for: .tabBar)
+        .background(TabBarHidingBridge())
+        .toolbar(hideUI ? .hidden : .visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 4) {
+                    Button {
+                        alarmEnabled.toggle()
+                        if !alarmEnabled {
+                            AlarmPlayer.shared.stop()
+                            SessionAlarmScheduler.cancel()
+                        }
+                    } label: {
+                        Label("Toggle alarm", systemImage: alarmEnabled ? "bell.and.waves.left.and.right.fill" : "bell.slash.fill")
+                            .labelStyle(.iconOnly)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+
+                    Button {
+                        activeSheet = .colorCustomization
+                    } label: {
+                        Label("Customize Colors", systemImage: "paintpalette.fill")
+                            .labelStyle(.iconOnly)
+                    }
+                }
+            }
+        }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .tasks:
@@ -424,6 +442,24 @@ struct TaskView: View {
         }
         
         stopTimer()
+    }
+}
+
+// Tells UINavigationController to animate the tab bar out/in with push/pop
+private struct TabBarHidingBridge: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> TabBarHidingController { TabBarHidingController() }
+    func updateUIViewController(_ vc: TabBarHidingController, context: Context) {}
+}
+
+private final class TabBarHidingController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.isHidden = true
+    }
+
+    override func willMove(toParent parent: UIViewController?) {
+        super.willMove(toParent: parent)
+        parent?.hidesBottomBarWhenPushed = true
     }
 }
 

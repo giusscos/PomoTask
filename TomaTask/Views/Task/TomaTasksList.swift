@@ -13,23 +13,27 @@ struct TomaTasksList: View {
     
     @Query var tomaTasks: [TomaTask]
     
-    @State var selectedTask: TomaTask?
-    @State var selectedCategory: TomaTask.Category = .study
+    @State private var sheetConfig: EditSheetConfig?
+
+    struct EditSheetConfig: Identifiable {
+        let id = UUID()
+        let task: TomaTask
+        let isNew: Bool
+    }
     
     var body: some View {
-        VStack {
-            List {
-                if (tomaTasks.isEmpty) {
-                    Text("No tasks in this category yet!")
-                        .font(.title3)
-                } else {
+        Group {
+            if tomaTasks.isEmpty {
+                emptyStateView
+            } else {
+                List {
                     ForEach(tomaTasks) { task in
                         NavigationLink {
                             TaskView(task: task)
                         } label: {
                             TaskRow(task: task)
                         }
-                        .swipeActions (edge: .trailing) {
+                        .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 deleteTask(item: task)
                             } label: {
@@ -37,7 +41,7 @@ struct TomaTasksList: View {
                             }
                             
                             Button {
-                                selectedTask = task
+                                sheetConfig = EditSheetConfig(task: task, isNew: false)
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
@@ -45,32 +49,60 @@ struct TomaTasksList: View {
                         }
                     }
                 }
-            }
-            .listStyle(.plain)
-            .navigationTitle("Timers")
-            .toolbar {
-                ToolbarItemGroup (placement: .topBarTrailing) {
-                    Button {
-                        addTask()
-                    } label: {
-                        Label("Add", systemImage: "plus")
-                            .labelStyle(.titleOnly)
-                    }
-                }
-            }
-            .sheet(item: $selectedTask) { task in
-                EditTask(task: task)
-                    .onAppear() {
-                        task.category = selectedCategory
-                    }
+                .listStyle(.plain)
             }
         }
+        .navigationTitle("Timers")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: addTask) {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .sheet(item: $sheetConfig) { config in
+            EditTask(task: config.task, isNew: config.isNew)
+                .id(config.task.persistentModelID)
+        }
+
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "timer")
+                .font(.system(size: 64))
+                .foregroundStyle(.tertiary)
+            
+            VStack(spacing: 8) {
+                Text("No Timers Yet")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("Create a timer to start a focused work session with the Pomodoro technique.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+            
+            Button(action: addTask) {
+                Label("Create Your First Timer", systemImage: "plus")
+                    .font(.headline)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Color.accentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
     
     private func addTask() {
         let tomatask = TomaTask()
-        selectedTask = tomatask
-        modelContext.insert(tomatask)
+        sheetConfig = EditSheetConfig(task: tomatask, isNew: true)
     }
     
     private func deleteTask(item: TomaTask) {
@@ -79,5 +111,5 @@ struct TomaTasksList: View {
 }
 
 #Preview {
-    TomaTasksList(selectedTask: TomaTask())
+    TomaTasksList()
 }
