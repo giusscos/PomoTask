@@ -15,7 +15,7 @@ struct TomaTaskWatch_Watch_AppApp: App {
     
     init() {
         do {
-            container = try ModelContainer(for: TomaTask.self, SubTask.self, Statistics.self)
+            container = try ModelContainer(for: TomaTask.self, Statistics.self)
         } catch {
             fatalError("Failed to initialize ModelContainer")
         }

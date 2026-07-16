@@ -18,7 +18,7 @@ struct TomaTaskApp: App {
     init() {
         try? Tips.configure([.displayFrequency(.immediate)])
         do {
-            container = try ModelContainer(for: TomaTask.self, SubTask.self, Statistics.self)
+            container = try ModelContainer(for: TomaTask.self, Statistics.self)
             container.mainContext.undoManager = UndoManager()
             
             // Request notification permission at app launch

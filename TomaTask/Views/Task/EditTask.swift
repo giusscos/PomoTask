@@ -19,9 +19,7 @@ struct EditTask: View {
     @State private var pauseDuration: Int
     @State private var repetition: Int
     @State private var category: TomaTask.Category
-    @State private var subtaskTexts: [String]
     
-    @State private var newSubTask: String = ""
     @State private var showDiscardAlert: Bool = false
     
     init(task: TomaTask, isNew: Bool = false) {
@@ -32,7 +30,6 @@ struct EditTask: View {
         _pauseDuration = State(initialValue: task.pauseDuration)
         _repetition = State(initialValue: task.repetition)
         _category = State(initialValue: task.category)
-        _subtaskTexts = State(initialValue: task.unwrappedTasks.map(\.text))
     }
     
     private var hasChanges: Bool {
@@ -40,8 +37,7 @@ struct EditTask: View {
         maxDuration != task.maxDuration ||
         pauseDuration != task.pauseDuration ||
         repetition != task.repetition ||
-        category != task.category ||
-        subtaskTexts != task.unwrappedTasks.map(\.text)
+        category != task.category
     }
     
     private var totalFocusTime: Int { maxDuration * repetition }
@@ -94,37 +90,6 @@ struct EditTask: View {
                     Text("Total: \(totalFocusTime) min focus + \(totalBreakTime) min break = \(totalFocusTime + totalBreakTime) min")
                 }
                 
-                Section {
-                    HStack {
-                        TextField("Add a subtask…", text: $newSubTask)
-                            .onSubmit(addSubTask)
-                        
-                        if !newSubTask.isEmpty {
-                            Button(action: addSubTask) {
-                                Image(systemName: "plus.circle.fill")
-                                    .foregroundStyle(.tint)
-                            }
-                            .buttonStyle(.plain)
-                            .transition(.scale.combined(with: .opacity))
-                        }
-                    }
-                    
-                    ForEach(subtaskTexts, id: \.self) { text in
-                        HStack(spacing: 8) {
-                            Image(systemName: "circle")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(text)
-                        }
-                    }
-                    .onDelete(perform: deleteSubTask)
-                } header: {
-                    Text("Subtasks")
-                } footer: {
-                    if subtaskTexts.isEmpty {
-                        Text("Optional. Add steps to follow during this timer session.")
-                    }
-                }
             }
             .navigationTitle(isNew ? "New Timer" : "Edit Timer")
             .navigationBarTitleDisplayMode(.inline)
@@ -158,8 +123,6 @@ struct EditTask: View {
                 Text(isNew ? "This timer will not be saved." : "Your edits will be lost.")
             }
         }
-        .animation(.easeInOut, value: newSubTask.isEmpty)
-        .animation(.easeInOut, value: subtaskTexts.count)
     }
     
     private func handleCancel() {
@@ -182,21 +145,6 @@ struct EditTask: View {
         task.pauseDuration = pauseDuration
         task.repetition = repetition
         task.category = category
-        
-        let oldSubtasks = task.tasks ?? []
-        oldSubtasks.forEach { modelContext.delete($0) }
-        task.tasks = subtaskTexts.map { SubTask(text: $0) }
-    }
-    
-    private func addSubTask() {
-        let trimmed = newSubTask.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        subtaskTexts.append(trimmed)
-        newSubTask = ""
-    }
-    
-    private func deleteSubTask(at offsets: IndexSet) {
-        subtaskTexts.remove(atOffsets: offsets)
     }
 }
 

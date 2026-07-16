@@ -74,7 +74,6 @@
 			membershipExceptions = (
 				Model/Statistics.swift,
 				Model/Store.swift,
-				Model/SubTask.swift,
 				Model/TomaTask.swift,
 			);
 			target = 68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */;

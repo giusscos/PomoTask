@@ -106,13 +106,6 @@ struct StatisticsView: View {
                     )
                     
                     StatCard(
-                        title: "Subtasks Completed",
-                        value: "\(filteredStatistics.reduce(0) { $0 + $1.subtasksCompleted })",
-                        icon: "list.bullet.circle.fill",
-                        color: .orange
-                    )
-                    
-                    StatCard(
                         title: "Total Focus Time",
                         value: formatTime(filteredStatistics.reduce(0) { $0 + $1.totalFocusTime }),
                         icon: "clock.fill",
@@ -192,7 +185,6 @@ struct StatisticsChartView: View {
                 let aggregated = Statistics(date: date)
                 aggregated.timersStarted = stats.reduce(0) { $0 + $1.timersStarted }
                 aggregated.timersCompleted = stats.reduce(0) { $0 + $1.timersCompleted }
-                aggregated.subtasksCompleted = stats.reduce(0) { $0 + $1.subtasksCompleted }
                 aggregated.totalFocusTime = stats.reduce(0) { $0 + $1.totalFocusTime }
                 return aggregated
             }.sorted { $0.date < $1.date }

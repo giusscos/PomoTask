@@ -14,9 +14,6 @@ class TomaTask  {
     var maxDuration: Int = 25
     var pauseDuration: Int = 5
     var repetition: Int = 4
-    @Relationship(deleteRule: .cascade) var tasks: [SubTask]? = []
-    
-    var unwrappedTasks: [SubTask] { tasks ?? [] }
     
     var category: Category = Category.work
     
@@ -34,14 +31,12 @@ class TomaTask  {
         maxDuration: Int = 25,
         pauseDuration: Int = 5,
         repetition: Int = 4,
-        tasks: [SubTask] = [],
         category: Category = Category.work
     ) {
         self.title = title
         self.maxDuration = maxDuration
         self.pauseDuration = pauseDuration
         self.repetition = repetition
-        self.tasks = tasks
         self.category = category
     }
 }

@@ -13,27 +13,7 @@ struct WatchEditTask: View {
     
     @Bindable var task: TomaTask
     
-    @State var newSubTask: String = ""
-    
     var body: some View {
-        TabView {
-            basicInfoTab
-            
-            subtasksTab
-        }
-        .tabViewStyle(.verticalPage)
-        .navigationTitle("Edit")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-    }
-    
-    // MARK: - Basic Info Tab
-    private var basicInfoTab: some View {
         List {
             Section {
                 TextField("Task Title", text: $task.title)
@@ -67,71 +47,13 @@ struct WatchEditTask: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-    
-    // MARK: - Subtasks Tab
-    private var subtasksTab: some View {
-        List {
-            Section {
-                TextField("New subtask", text: $newSubTask)
-                    .onSubmit {
-                        addSubTask()
-                    }
-            } header: {
-                Text("Add Subtask")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            if task.unwrappedTasks.isEmpty {
-                Section {
-                    Text("No subtasks yet")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-            } else {
-                Section {
-                    ForEach(task.unwrappedTasks, id: \.self) { subtask in
-                        HStack {
-                            Text(subtask.text)
-                                .font(.caption)
-                                .lineLimit(1)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            Button {
-                                deleteSubTask(subtask)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                                    .foregroundStyle(.red)
-                                    .labelStyle(.iconOnly)
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Subtasks")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        .navigationTitle("Edit")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") {
+                    dismiss()
                 }
             }
-        }
-    }
-    
-    // MARK: - Helper Methods
-    private func addSubTask() {
-        guard !newSubTask.isEmpty else { return }
-        
-        if task.tasks == nil {
-            task.tasks = []
-        }
-        
-        task.tasks?.append(SubTask(text: newSubTask))
-        newSubTask = ""
-    }
-    
-    private func deleteSubTask(_ subtask: SubTask) {
-        if let index = task.tasks?.firstIndex(of: subtask) {
-            task.tasks?.remove(at: index)
         }
     }
 }

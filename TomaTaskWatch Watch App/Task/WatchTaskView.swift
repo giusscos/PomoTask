@@ -19,7 +19,6 @@ struct WatchTaskView: View {
     @State private var isRunning: Bool = false
     @State private var pauseTime: Bool = false
     @State private var repetition: Int = 0
-    @State private var showingSubTasks: Bool = false
     
     var maxDuration: TimeInterval {
         Double(task.maxDuration * 60)
@@ -70,20 +69,8 @@ struct WatchTaskView: View {
                 .padding(.vertical, 8)
                 .foregroundStyle(.primary)
                 
-                if !task.unwrappedTasks.isEmpty {
-                    Button {
-                        showingSubTasks = true
-                    } label: {
-                        Label("Tasks", systemImage: "checklist")
-                            .font(.subheadline)
-                    }
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                }
             }
             .padding()
-        }
-        .sheet(isPresented: $showingSubTasks) {
-            WatchSubTaskList(tasks: task.unwrappedTasks)
         }
         .onAppear() {
             time = maxDuration

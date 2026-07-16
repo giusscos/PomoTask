@@ -6,14 +6,12 @@ class Statistics {
     var date: Date = Date()
     var timersStarted: Int = 0
     var timersCompleted: Int = 0
-    var subtasksCompleted: Int = 0
-    var totalFocusTime: TimeInterval = 0 // in secods
+    var totalFocusTime: TimeInterval = 0 // in seconds
     
-    init(date: Date = Date(), timersStarted: Int = 0, timersCompleted: Int = 0, subtasksCompleted: Int = 0, totalFocusTime: TimeInterval = 0) {
+    init(date: Date = Date(), timersStarted: Int = 0, timersCompleted: Int = 0, totalFocusTime: TimeInterval = 0) {
         self.date = date
         self.timersStarted = timersStarted
         self.timersCompleted = timersCompleted
-        self.subtasksCompleted = subtasksCompleted
         self.totalFocusTime = totalFocusTime
     }
     
@@ -56,4 +54,4 @@ class Statistics {
             return getDailyStats(from: date, context: context)
         }
     }
-} 
+}
