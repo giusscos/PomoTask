@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 import UserNotifications
 
 var defaultTimeStart: Double = 5 * 60
@@ -20,37 +21,18 @@ struct ProgressiveTimerView: View {
     }
     
     @Environment(\.modelContext) private var modelContext
-    @Environment(Store.self) private var store
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     
-    @State var hideUI: Bool = false
-    @State private var showingColorCustomization: Bool = false
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
+    @AppStorage("preventScreenLock") private var preventScreenLock = true
     
     @State private var showingSheet: Bool = false
-    
-    @State private var meshValue1 = Float.random(in: 0.5...0.7)
-    @State private var meshValue2 = Float.random(in: 0.4...0.8)
-    
-    // AppStorage for colors using hex strings
-    @AppStorage("meshColor1Hex") private var meshColor1Hex: String = "#000000" // Black
-    @AppStorage("meshColor2Hex") private var meshColor2Hex: String = "#FFA500" // Orange
-    @AppStorage("meshColor3Hex") private var meshColor3Hex: String = "#FF0000" // Red
-    @AppStorage("colorMode") private var storedColorMode: String = "solid"
-    
-    // Derived state from AppStorage
-    @State var meshColor1: Color = .black
-    @State var meshColor2: Color = .orange
-    @State var meshColor3: Color = .red
-    @State private var colorMode: ColorMode = .solid
-        
-    @State var heigth: CGFloat = screenSize
     
     @State private var selectedTime: Double = defaultTimeStart
     @State private var timer: Timer?
     @State var time: TimeInterval = 0
     @State private var isRunning: Bool = false
     @State private var isBreakTime: Bool = false
-    @State private var initialTime: TimeInterval = 0
     
     // Accrue focus seconds locally; flush to SwiftData on session boundaries
     @State private var pendingFocusSeconds: TimeInterval = 0
@@ -61,69 +43,80 @@ struct ProgressiveTimerView: View {
     @State private var backgroundTime: TimeInterval = 0
     @State private var backgroundStartDate: Date?
     
-    var isSubscribed: Bool {
-        !store.purchasedSubscriptions.isEmpty
+    private let tomatoRed = Color(red: 0.86, green: 0.14, blue: 0.14)
+    private let breakRed = Color(red: 0.72, green: 0.22, blue: 0.28)
+    private let startTimerTip = StartTimerTip()
+    
+    private var remainingMinutes: Double {
+        time / 60
+    }
+    
+    private var phaseDurationMinutes: Int {
+        max(1, Int((selectedTime / 60).rounded()))
     }
     
     var body: some View {
-        VStack {
-            ZStack {
-                Group {
-                    if colorMode == .solid || !isSubscribed {
-                        SolidTimer(heigth: heigth, color: meshColor1)
-                    } else {
-                        MeshGradientTimer(
-                            time: time,
-                            meshColor1: meshColor1,
-                            meshColor2: meshColor2,
-                            meshColor3: meshColor3
-                        )
-                    }
-                }
-                .onTapGesture {
-                    withAnimation {
-                        hideUI.toggle()
-                    }
-                }
+        GeometryReader { geo in
+            let isLandscape = verticalSizeClass == .compact
+            let stemWidth = min(geo.size.width, geo.size.height)
+            
+            ZStack(alignment: .top) {
+                (isBreakTime ? breakRed : tomatoRed)
+                    .ignoresSafeArea()
                 
-                VStack (spacing: 8) {
-                    Text(!isBreakTime ? "Focus time" : "Break time")
-                        .font(.headline)
+                PomodoroStemView()
+                    .frame(width: stemWidth)
+                    .offset(y: -stemWidth * 0.32)
+                    .allowsHitTesting(false)
+                    .ignoresSafeArea(edges: .top)
+                    .zIndex(2)
+                
+                VStack(spacing: 0) {
+                    if isLandscape {
+                        Spacer(minLength: 0)
+                            .frame(maxHeight: 4)
+                    } else {
+                        Spacer(minLength: 0)
+                    }
                     
-                    Text(formattedTime())
-                        .font(.system(size: 48, weight: .bold))
+                    dialSection
+                        .padding(.horizontal, 8)
                     
-                    HStack {
-                        Button {
-                            resetTimer()
-                        } label: {
-                            Label("Stop", systemImage: "stop.fill")
-                                .font(.title)
-                                .labelStyle(.iconOnly)
-                                .contentTransition(.symbolEffect(.replace))
-                                .opacity(time == selectedTime ? 0.3 : 1)
-                        }.disabled(time == selectedTime)
-                        
-                        Button {
-                            isRunning.toggle()
-                            
-                            isRunning ? startTimer() : pauseTimer()
-                        } label: {
-                            Label(!isRunning ? "Start" : "Pause", systemImage: isRunning ? "pause.fill" : "play.fill")
-                                .font(.title)
-                                .contentTransition(.symbolEffect(.replace))
-                                .labelStyle(.iconOnly)
-                        }
-                    }.foregroundStyle(.primary)
+                    Spacer(minLength: isLandscape ? 4 : 8)
+                        .frame(maxHeight: isLandscape ? 4 : 20)
+                    
+                    playPauseButton
+                        .popoverTip(startTimerTip, arrowEdge: .bottom)
+                    
+                    Spacer(minLength: 0)
                 }
-                .hideUIAnimation(hideUI: hideUI)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .toolbar(hideUI ? .hidden : .visible, for: .navigationBar)
-        .onChange(of: hideUI) { _, hidden in animateTabBar(hidden: hidden) }
+        .foregroundStyle(.white)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text("Progressive")
+                        .font(.title3.weight(.bold))
+                        .fontDesign(.rounded)
+                        .lineLimit(1)
+                    
+                    Text(isBreakTime ? "Break" : "Focus")
+                        .font(.subheadline.weight(.semibold))
+                        .fontWidth(.condensed)
+                        .opacity(0.75)
+                        .textCase(.uppercase)
+                        .tracking(1.2)
+                }
+                .foregroundStyle(.white)
+            }
+            
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 4) {
+                Menu {
                     Button {
                         alarmEnabled.toggle()
                         if !alarmEnabled {
@@ -131,53 +124,51 @@ struct ProgressiveTimerView: View {
                             SessionAlarmScheduler.cancel()
                         }
                     } label: {
-                        Label("Toggle alarm", systemImage: alarmEnabled ? "bell.and.waves.left.and.right.fill" : "bell.slash.fill")
-                            .labelStyle(.iconOnly)
-                            .contentTransition(.symbolEffect(.replace))
+                        Label(
+                            alarmEnabled ? "Alarm Sound: On" : "Alarm Sound: Off",
+                            systemImage: alarmEnabled
+                                ? "bell.and.waves.left.and.right.fill"
+                                : "bell.slash.fill"
+                        )
+                        .contentTransition(.symbolEffect(.replace))
+                        .animation(.default, value: alarmEnabled)
                     }
-
+                    
                     Button {
-                        showingColorCustomization = true
+                        preventScreenLock.toggle()
+                        UIApplication.shared.isIdleTimerDisabled = preventScreenLock
                     } label: {
-                        Label("Customize Colors", systemImage: "paintpalette.fill")
-                            .labelStyle(.iconOnly)
+                        Label(
+                            preventScreenLock ? "Screen Always On" : "Screen Auto-Lock",
+                            systemImage: preventScreenLock ? "sun.max.fill" : "moon.zzz.fill"
+                        )
+                        .contentTransition(.symbolEffect(.replace))
+                        .animation(.default, value: preventScreenLock)
                     }
+                    
+                    if time != selectedTime || isRunning || isBreakTime {
+                        Button(role: .destructive) {
+                            resetTimer()
+                        } label: {
+                            Label("Reset Timer", systemImage: "arrow.counterclockwise")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.white.opacity(0.9))
                 }
             }
         }
         .sheet(isPresented: $showingSheet, onDismiss: {
             time = selectedTime
-            
-            if !isBreakTime && colorMode == .solid {
-                heigth = screenSize
-            }
         }) {
             FeedbackSheet(selectedTime: $selectedTime, breakTime: $isBreakTime)
         }
-        .sheet(isPresented: $showingColorCustomization) {
-            ColorCustomizationView(
-                meshColor1: $meshColor1,
-                meshColor2: $meshColor2,
-                meshColor3: $meshColor3,
-                colorMode: $colorMode,
-                isSubscribed: isSubscribed,
-                onColorChange: saveColors
-            )
-            .presentationDragIndicator(.visible)
-            .presentationDetents([UIDevice.current.userInterfaceIdiom == .pad ? .large : .medium])
-            .presentationCornerRadius(32)
-            .presentationBackground(.thinMaterial)
-        }
-        .onAppear(){
+        .onAppear {
             time = defaultTimeStart
-            if colorMode == .solid {
-                heigth = screenSize
-            }
-            loadSavedColors()
-            UIApplication.shared.isIdleTimerDisabled = true
+            UIApplication.shared.isIdleTimerDisabled = preventScreenLock
         }
-        .onDisappear() {
-            animateTabBar(hidden: false)
+        .onDisappear {
             resetTimer()
             UIApplication.shared.isIdleTimerDisabled = false
         }
@@ -197,33 +188,48 @@ struct ProgressiveTimerView: View {
             isRunning = false
             pauseTimer()
         }
+        .statusBarHidden(false)
     }
     
-    // Load saved colors from AppStorage
-    private func loadSavedColors() {
-        meshColor1 = Color.fromHexString(meshColor1Hex)
-        meshColor2 = Color.fromHexString(meshColor2Hex)
-        meshColor3 = Color.fromHexString(meshColor3Hex)
-        colorMode = storedColorMode == "mesh" ? .mesh : .solid
+    // MARK: - Dial
+    
+    private var dialSection: some View {
+        PomodoroDialPicker(
+            formattedTime: formattedTime(),
+            remainingMinutes: remainingMinutes,
+            maxMinutes: phaseDurationMinutes,
+            isInteractive: false,
+            onWind: { _ in }
+        )
     }
     
-    // Save colors to AppStorage
-    private func saveColors() {
-        meshColor1Hex = meshColor1.toHexString()
-        meshColor2Hex = meshColor2.toHexString()
-        meshColor3Hex = meshColor3.toHexString()
-        storedColorMode = colorMode == .mesh ? "mesh" : "solid"
+    // MARK: - Play / Pause
+    
+    private var playPauseButton: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            isRunning.toggle()
+            if isRunning {
+                startTimer()
+            } else {
+                pauseTimer()
+            }
+            startTimerTip.invalidate(reason: .actionPerformed)
+        } label: {
+            Image(systemName: isRunning ? "pause.circle.fill" : "play.circle.fill")
+                .font(.system(size: verticalSizeClass == .compact ? 48 : 64))
+                .foregroundStyle(.white.opacity(0.9))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isRunning ? "Pause" : "Start")
     }
     
-    func formattedTime () -> String {
+    func formattedTime() -> String {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%02d:%02d", minutes, seconds)
-    }
-    
-    func handleMeshAnimation() {
-        meshValue1 = cos(.random(in: 0.0...1.0)) > 0 ? Float.random(in: 0.5...0.7) : Float.random(in: 0.4...0.8)
-        meshValue2 = cos(.random(in: 0.0...1.0)) < 0 ? Float.random(in: 0.4...0.6) : Float.random(in: 0.5...0.7)
     }
     
     private func ensureSessionStats() -> Statistics {
@@ -244,7 +250,6 @@ struct ProgressiveTimerView: View {
     }
     
     func startTimer() {
-        initialTime = time
         let stats = ensureSessionStats()
         stats.timersStarted += 1
         try? modelContext.save()
@@ -268,22 +273,11 @@ struct ProgressiveTimerView: View {
         }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            if colorMode == .mesh {
-                handleMeshAnimation()
-            }
-            
-            
-            if(time > 0) {
+            if time > 0 {
                 isRunning = true
                 
                 time -= 1
                 pendingFocusSeconds += 1
-                
-                if(isBreakTime && colorMode == .solid) {
-                    heigth += screenSize / CGFloat(selectedTime / 1)
-                } else if (!isBreakTime && colorMode == .solid) {
-                    heigth -= screenSize / CGFloat(selectedTime / 1)
-                }
             } else {
                 pauseTimer()
                 Task { @MainActor in
@@ -304,7 +298,6 @@ struct ProgressiveTimerView: View {
         flushFocusStats()
         isRunning = false
         timer?.invalidate()
-        hideUI = false
         
         if time > 0 {
             SessionAlarmScheduler.pause()
@@ -320,24 +313,18 @@ struct ProgressiveTimerView: View {
         SessionAlarmScheduler.cancel()
         isRunning = false
         timer?.invalidate()
-        hideUI = false
         LiveActivityManager.endAll()
         
         isBreakTime = false
         time = defaultTimeStart
         selectedTime = defaultTimeStart
         sessionStats = nil
-        
-        if colorMode == .solid {
-            heigth = screenSize
-        }
     }
     
     private func startBackgroundTimer() {
         backgroundStartDate = Date()
         backgroundTime = time
         
-        // Start background task
         backgroundTask = UIApplication.shared.beginBackgroundTask { [self] in
             endBackgroundTask()
         }
@@ -387,132 +374,103 @@ struct ProgressiveTimerView: View {
         isRunning = false
         timer?.invalidate()
     }
-
-    private func animateTabBar(hidden: Bool) {
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = scene.windows.first(where: { $0.isKeyWindow }),
-              let tabBarController = findTabBarController(in: window.rootViewController) else { return }
-        let tabBar = tabBarController.tabBar
-        UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.85, initialSpringVelocity: 0.2) {
-            tabBar.transform = hidden
-                ? CGAffineTransform(translationX: 0, y: tabBar.frame.height + tabBar.safeAreaInsets.bottom)
-                : .identity
-        }
-    }
-
-    private func findTabBarController(in vc: UIViewController?) -> UITabBarController? {
-        guard let vc else { return nil }
-        if let tbc = vc as? UITabBarController { return tbc }
-        for child in vc.children {
-            if let found = findTabBarController(in: child) { return found }
-        }
-        return nil
-    }
 }
 
 struct FeedbackSheet: View {
- @Environment(\.dismiss) var dismiss
-      
- @Binding var selectedTime: Double
- @Binding var breakTime: Bool
- 
-var body: some View {
-    VStack {
-        Text("How do you feel?")
-            .font(.title)
-            .fontWeight(.semibold)
-        
-        VStack {
-            Button {
-                takeABreak()
-            } label: {
-                Text("I need a break")
-                    .padding()
-                    .bold()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-            }
-            
-            Button {
-                useTheSameTime()
-            } label: {
-                Text("I need less time")
-                    .padding()
-                    .bold()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-            }
-            
-            Button {
-                increaseTime()
-            } label: {
-                Text("I'm in the flow")
-                    .padding()
-                    .bold()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-            }
-        }
-        .frame(maxWidth: 500)
-    }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-    .padding()
-}
- 
- func takeABreak() {
-     selectedTime = 5 * 60
-     
-     setBreak()
- }
- 
- func setNoBreak() {
-     breakTime = false
-     dismiss()
- }
- 
- func setBreak() {
-     breakTime = true
-     dismiss()
- }
- 
- func useTheSameTime() {
-     selectedTime = selectedTime - defaultMinSeconds <= defaultMinSeconds ? defaultMinSeconds : selectedTime - defaultMinSeconds
-     
-     setNoBreak()
- }
- 
- func increaseTime() {
-     selectedTime = selectedTime + defaultMinSeconds <= defaultMaxSeconds ? selectedTime + defaultMinSeconds : defaultMaxSeconds
-     
-     setNoBreak()
- }
-}
-
-struct HideUIAnimationModifier: ViewModifier {
-    var hideUI: Bool
+    @Environment(\.dismiss) var dismiss
     
-    func body(content: Content) -> some View {
-        content
-            .blur(radius: hideUI ? 10 : 0)
-            .opacity(hideUI ? 0 : 1)
-            .scaleEffect(hideUI ? 2 : 1)
-            .animation(.spring(), value: hideUI)
+    @Binding var selectedTime: Double
+    @Binding var breakTime: Bool
+    
+    var body: some View {
+        VStack {
+            Text("How do you feel?")
+                .font(.title)
+                .fontWeight(.semibold)
+            
+            VStack {
+                Button {
+                    takeABreak()
+                } label: {
+                    Text("I need a break")
+                        .padding()
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.red)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                }
+                
+                Button {
+                    useTheSameTime()
+                } label: {
+                    Text("I need less time")
+                        .padding()
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.gray)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                }
+                
+                Button {
+                    increaseTime()
+                } label: {
+                    Text("I'm in the flow")
+                        .padding()
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .clipShape(Capsule())
+                }
+            }
+            .frame(maxWidth: 500)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .padding()
     }
-}
-
-extension View {
-    func hideUIAnimation(hideUI: Bool) -> some View {
-        self.modifier(HideUIAnimationModifier(hideUI: hideUI))
+    
+    func takeABreak() {
+        selectedTime = 5 * 60
+        setBreak()
+    }
+    
+    func setNoBreak() {
+        breakTime = false
+        dismiss()
+    }
+    
+    func setBreak() {
+        breakTime = true
+        dismiss()
+    }
+    
+    func useTheSameTime() {
+        selectedTime = selectedTime - defaultMinSeconds <= defaultMinSeconds ? defaultMinSeconds : selectedTime - defaultMinSeconds
+        setNoBreak()
+    }
+    
+    func increaseTime() {
+        selectedTime = selectedTime + defaultMinSeconds <= defaultMaxSeconds ? selectedTime + defaultMinSeconds : defaultMaxSeconds
+        setNoBreak()
     }
 }
 
 #Preview {
-    ProgressiveTimerView()
-        .environment(Store())
+    TabView {
+        Tab("Progressive", systemImage: "dial.medium") {
+            NavigationStack {
+                ProgressiveTimerView()
+            }
+        }
+        
+        Tab("Classic", systemImage: "timer") {
+            NavigationStack {
+                TaskView(task: TomaTask(title: "Deep Work", maxDuration: 25, pauseDuration: 5, repetition: 4))
+            }
+        }
+    }
+    .environment(Store())
+    .task { try? Tips.configure([.displayFrequency(.immediate)]) }
 }

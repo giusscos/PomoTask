@@ -31,39 +31,41 @@ struct TaskView: View {
     
     var body: some View {
         GeometryReader { geo in
+            let isLandscape = verticalSizeClass == .compact
+            let stemWidth = min(geo.size.width, geo.size.height)
+            
             ZStack(alignment: .top) {
                 (engine.isBreak ? breakRed : tomatoRed)
                     .ignoresSafeArea()
                 
-                let stemWidth = min(geo.size.width, geo.size.height)
                 PomodoroStemView()
                     .frame(width: stemWidth)
                     .offset(y: -stemWidth * 0.32)
                     .allowsHitTesting(false)
+                    .ignoresSafeArea(edges: .top)
                     .zIndex(2)
                 
                 VStack(spacing: 0) {
-                    Color.clear
-                        .frame(height: geo.safeAreaInsets.top + 12)
+                    if isLandscape {
+                        Spacer(minLength: 0)
+                            .frame(maxHeight: 4)
+                    } else {
+                        Spacer(minLength: 0)
+                    }
                     
-                    Spacer(minLength: 0)
-                        .frame(maxHeight: verticalSizeClass == .compact ? 8 : .infinity)
-
                     dialSection
                         .padding(.horizontal, 8)
                     
-                    Spacer(minLength: 8).frame(maxHeight: verticalSizeClass == .compact ? 8 : 20)
+                    Spacer(minLength: isLandscape ? 4 : 8)
+                        .frame(maxHeight: isLandscape ? 4 : 20)
                     
                     playPauseButton
                         .popoverTip(startTimerTip, arrowEdge: .bottom)
                     
                     Spacer(minLength: 0)
-                        .frame(maxHeight: verticalSizeClass == .compact ? 8 : .infinity)
-                    
-                    Color.clear.frame(height: verticalSizeClass == .compact ? 0 : max(geo.safeAreaInsets.bottom, 16))
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .ignoresSafeArea(edges: .top)
         }
         .foregroundStyle(.white)
         .navigationBarTitleDisplayMode(.inline)
@@ -155,7 +157,6 @@ struct TaskView: View {
             guard let path = notification.userInfo?["path"] as? String, path == "pause" else { return }
             engine.handleDeepLinkPause()
         }
-        .background(TabBarHidingBridge())
         .statusBarHidden(false)
     }
     
@@ -190,55 +191,19 @@ struct TaskView: View {
     }
 }
 
-// MARK: - Tab bar hide
-
-private struct TabBarHidingBridge: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> TabBarHidingController {
-        TabBarHidingController()
-    }
-    
-    func updateUIViewController(_ vc: TabBarHidingController, context: Context) {}
-}
-
-private final class TabBarHidingController: UIViewController {
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.isHidden = true
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        animateTabBar(hidden: true, animated: animated)
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        animateTabBar(hidden: false, animated: animated)
-    }
-
-    private func animateTabBar(hidden: Bool, animated: Bool) {
-        guard let tabBar = tabBarController?.tabBar,
-              let window = tabBar.window else { return }
-
-        let windowHeight = window.bounds.height
-        let tabBarHeight = tabBar.frame.height
-        let targetY = hidden ? windowHeight : windowHeight - tabBarHeight
-
-        guard abs(tabBar.frame.origin.y - targetY) > 1 else { return }
-
-        UIView.animate(
-            withDuration: animated ? 0.35 : 0,
-            delay: 0,
-            options: [.curveEaseInOut, .allowUserInteraction]
-        ) {
-            tabBar.frame.origin.y = targetY
-        }
-    }
-}
-
 #Preview {
-    NavigationStack {
-        TaskView(task: TomaTask(title: "Deep Work", maxDuration: 25, pauseDuration: 5, repetition: 4))
+    TabView {
+        Tab("Classic", systemImage: "timer") {
+            NavigationStack {
+                TaskView(task: TomaTask(title: "Deep Work", maxDuration: 25, pauseDuration: 5, repetition: 4))
+            }
+        }
+        
+        Tab("Progressive", systemImage: "dial.medium") {
+            NavigationStack {
+                ProgressiveTimerView()
+            }
+        }
     }
     .environment(Store())
     .task { try? Tips.configure([.displayFrequency(.immediate)]) }
