@@ -20,21 +20,21 @@ struct SettingsView: View {
         List {
             Section() {
                 RoundedRectangle(cornerRadius: 48)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(OnboardingStyle.tomatoRed)
                     .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
                     .aspectRatio(16/9, contentMode: .fill)
                     .overlay {
                         VStack {
-                            Text("Pro access")
+                            Text("Unlock Progressive")
                                 .foregroundStyle(.white)
-                                .font(.largeTitle)
-                                .bold()
+                                .font(.largeTitle.weight(.bold))
+                                .fontDesign(.rounded)
                             
-                            Text("Unlock fantastic and handcrafted themes and app icons for your cool Pomorodo and Progressive timer")
+                            Text("Adaptive focus, check-ins, stats, and themes")
                                 .multilineTextAlignment(.center)
-                                .foregroundStyle(.white)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
+                                .foregroundStyle(.white.opacity(0.9))
+                                .font(.subheadline.weight(.semibold))
+                                .fontDesign(.rounded)
                             
                             Button {
                                 if store.purchasedSubscriptions.isEmpty {
@@ -46,7 +46,7 @@ struct SettingsView: View {
                             } label: {
                                 Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(OnboardingStyle.tomatoRed)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
                                     .background(.white)
@@ -133,11 +133,11 @@ struct SettingsView: View {
                     }
                 }
                 
-                Link("Terms of use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                Link("Terms of use", destination: LegalURLs.termsOfUse)
                     .font(.headline)
                     .foregroundColor(.blue)
                 
-                Link("Privacy Policy", destination: URL(string: "https://giusscos.it/privacy")!)
+                Link("Privacy Policy", destination: LegalURLs.privacyPolicy)
                     .font(.headline)
                     .foregroundColor(.blue)
             } header: {

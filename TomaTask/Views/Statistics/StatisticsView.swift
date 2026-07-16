@@ -121,27 +121,28 @@ struct StatisticsView: View {
     private var paywallContent: some View {
         VStack(spacing: 20) {
             Image(systemName: "chart.bar.fill")
-                .font(.system(size: 60))
-                .foregroundColor(Color.accentColor)
+                .font(.system(size: 60, weight: .semibold))
+                .foregroundStyle(OnboardingStyle.tomatoRed)
             
-            Text("Statistics")
-                .font(.title)
-                .bold()
+            Text("Focus statistics")
+                .font(.title.weight(.bold))
+                .fontDesign(.rounded)
             
-            Text("Track your productivity and progress with detailed statistics. Upgrade to Pro to unlock this feature.")
+            Text("Track focus time, starts, and completions. Unlock with Progressive Pro.")
                 .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
             
             Button {
                 showingPaywall = true
             } label: {
                 Text("Upgrade to Pro")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .font(.headline.weight(.bold))
+                    .fontDesign(.rounded)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.accentColor)
+                    .background(OnboardingStyle.tomatoRed)
                     .clipShape(Capsule())
             }
             .padding(.horizontal)

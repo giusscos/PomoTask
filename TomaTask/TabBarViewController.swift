@@ -7,22 +7,27 @@
 
 import SwiftUI
 
-var featureSets: [(String, String, String)] = [
-    ("Support", "hand.thumbsup.fill", "Help us to improve PomoTask for you and other users"),
-    ("On device tracking", "chart.bar.fill", "Focus on your progress with clear charts and statistics"),
-    ("New Themes", "swatchpalette.fill", "Personalize timers with your favorite colors and gradients"),
-    ("New App Icons", "app.gift.fill", "Customize the app icon with multiple and fantastic designs"),
-    ("iCloud Sync", "cloud.fill", "Stay focus and productive on all your devices"),
-    ("Feature suggestions", "questionmark.app.fill", "Take the chance to request a feature for your PomoTask app"),
-]
-
 let screenSize = UIScreen.main.bounds.height
 
 let defaultAppIcon = "AppIcon"
 
 struct TabBarViewController: View {
+    @Environment(Store.self) private var store
+    
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
     @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew: Bool = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    
+    private var isSubscribed: Bool {
+        !store.purchasedSubscriptions.isEmpty
+    }
+    
+    private var showOnboarding: Binding<Bool> {
+        Binding(
+            get: { !hasCompletedOnboarding },
+            set: { if !$0 { hasCompletedOnboarding = true } }
+        )
+    }
     
     var body: some View {
         VStack {
@@ -35,7 +40,11 @@ struct TabBarViewController: View {
                 
                 Tab("Progressive", systemImage: "dial.medium") {
                     NavigationStack {
-                        ProgressiveTimerView()
+                        if isSubscribed {
+                            ProgressiveTimerView()
+                        } else {
+                            ProgressiveLockedView()
+                        }
                     }
                 }
                 
@@ -52,10 +61,18 @@ struct TabBarViewController: View {
                 }
             }
         }
-        .onAppear() {
+        .onAppear {
             UITextField.appearance().clearButtonMode = .whileEditing
+            // Existing users who already saw WhatsNew skip first-launch onboarding.
+            if hasSeenWhatsNew && !hasCompletedOnboarding {
+                hasCompletedOnboarding = true
+            }
         }
-        .fullScreenCover(isPresented: .constant(!hasSeenWhatsNew)) {
+        .fullScreenCover(isPresented: showOnboarding) {
+            OnboardingRootView()
+                .environment(store)
+        }
+        .fullScreenCover(isPresented: .constant(hasCompletedOnboarding && !hasSeenWhatsNew)) {
             WhatsNewView()
         }
     }

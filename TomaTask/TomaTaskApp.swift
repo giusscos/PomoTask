@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import UserNotifications
 import TipKit
 
 @main
@@ -20,13 +19,6 @@ struct TomaTaskApp: App {
         do {
             container = try ModelContainer(for: TomaTask.self, Statistics.self)
             container.mainContext.undoManager = UndoManager()
-            
-            // Request notification permission at app launch
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-                if let error = error {
-                    print("Error requesting notification permission: \(error.localizedDescription)")
-                }
-            }
         } catch {
             fatalError("Failed to initialize ModelContainer")
         }
