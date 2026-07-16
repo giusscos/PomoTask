@@ -10,17 +10,26 @@ import SwiftUI
 struct SolidTimer: View {
     var heigth: CGFloat
     var color: Color = .red
+    
+    /// Keeps the “empty” area in the same light/dark family as the fill,
+    /// so chrome and labels never sit on a sudden system white/black flash.
+    private var stableBase: Color {
+        color.isLight ? Color.white : Color.black
+    }
         
     var body: some View {
-            Rectangle()
-                .overlay(content: {
+        Rectangle()
+            .overlay {
+                ZStack(alignment: .bottom) {
+                    stableBase
+                    
                     color
-                        .scaleEffect(y: heigth / screenSize, anchor: .bottom)
-                        .background(.background)
-                })
-                .clipped()
-                .animation(.linear(duration: 2), value: heigth)
-                .ignoresSafeArea(.all)
+                        .frame(height: max(0, heigth))
+                }
+            }
+            .clipped()
+            .animation(.linear(duration: 1), value: heigth)
+            .ignoresSafeArea(.all)
     }
 }
 

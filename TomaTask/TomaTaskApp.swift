@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import TipKit
 
 @main
 struct TomaTaskApp: App {
@@ -15,6 +16,7 @@ struct TomaTaskApp: App {
     @State private var store = Store()
     
     init() {
+        try? Tips.configure([.displayFrequency(.immediate)])
         do {
             container = try ModelContainer(for: TomaTask.self, SubTask.self, Statistics.self)
             container.mainContext.undoManager = UndoManager()

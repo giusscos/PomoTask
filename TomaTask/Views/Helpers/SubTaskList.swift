@@ -20,42 +20,57 @@ struct SubTaskList: View {
             Button {
                 tasksCompleted.toggle()
                 
-                tasks.forEach() { task in
-                    if task.isCompleted != tasksCompleted {
-                        task.isCompleted = tasksCompleted
-                        
-                        if tasksCompleted {
-                            let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                withAnimation {
+                    tasks.forEach() { task in
+                        if task.isCompleted != tasksCompleted {
+                            task.isCompleted = tasksCompleted
                             
-                            stats.subtasksCompleted += 1
-                            
-                            try? modelContext.save()
+                            if tasksCompleted {
+                                let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                                
+                                stats.subtasksCompleted += 1
+                                
+                                try? modelContext.save()
+                            }
                         }
                     }
                 }
             } label: {
                 Label(!tasksCompleted ? "Complete" : "Reset", systemImage: !tasksCompleted ? "plus.circle.fill" : "minus.circle.fill")
-                    .contentTransition(.symbolEffect(.replace))
             }
             .listRowBackground(Color.clear)
             
             ForEach(tasks, id: \.self) { task in
-                Label(task.text, systemImage: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .strikethrough(task.isCompleted)
-                    .disabled(task.isCompleted)
-                    .onTapGesture {
-                        let wasCompleted = task.isCompleted
-                        task.isCompleted.toggle()
-                        
-                        if !wasCompleted && task.isCompleted {
-                            let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
-                            stats.subtasksCompleted += 1
-                            try? modelContext.save()
+                HStack(spacing: 12) {
+                    Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                        .contentTransition(.symbolEffect(.replace))
+                    
+                    Text(task.text)
+                        .overlay(alignment: .leading) {
+                            GeometryReader { proxy in
+                                Rectangle()
+                                    .fill(.primary)
+                                    .frame(width: task.isCompleted ? proxy.size.width : 0, height: 1)
+                                    .frame(maxHeight: .infinity, alignment: .center)
+                            }
                         }
+                }
+                .contentShape(Rectangle())
+                .disabled(task.isCompleted)
+                .onTapGesture {
+                    guard !task.isCompleted else { return }
+                    
+                    withAnimation {
+                        task.isCompleted = true
+                        
+                        let stats = Statistics.getDailyStats(from: Date(), context: modelContext)
+                        stats.subtasksCompleted += 1
+                        try? modelContext.save()
                         
                         setTasksCompleted()
                     }
-                    .listRowBackground(Color.clear)
+                }
+                .listRowBackground(Color.clear)
             }
         }
         .padding()

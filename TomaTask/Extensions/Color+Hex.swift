@@ -30,4 +30,70 @@ extension Color {
 
         return Color(red: r, green: g, blue: b)
     }
+    
+    /// Relative luminance (0…1) for contrast decisions.
+    var relativeLuminance: Double {
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
+        
+        let uiColor = UIColor(self)
+        if !uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) {
+            guard let converted = uiColor.cgColor.converted(
+                to: CGColorSpaceCreateDeviceRGB(),
+                intent: .defaultIntent,
+                options: nil
+            ), let components = converted.components, components.count >= 3 else {
+                return 0.5
+            }
+            r = components[0]
+            g = components[1]
+            b = components[2]
+        }
+        
+        return 0.2126 * Double(r) + 0.7152 * Double(g) + 0.0722 * Double(b)
+    }
+    
+    var isLight: Bool {
+        relativeLuminance > 0.55
+    }
+    
+    /// Black or white, whichever stays readable on this color.
+    var contrastingForeground: Color {
+        isLight ? .black : .white
+    }
+    
+    static func blended(_ colors: [Color]) -> Color {
+        guard !colors.isEmpty else { return .black }
+        
+        var totalR: CGFloat = 0
+        var totalG: CGFloat = 0
+        var totalB: CGFloat = 0
+        
+        for color in colors {
+            var r: CGFloat = 0
+            var g: CGFloat = 0
+            var b: CGFloat = 0
+            var a: CGFloat = 0
+            let uiColor = UIColor(color)
+            
+            if uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) {
+                totalR += r
+                totalG += g
+                totalB += b
+            } else if let converted = uiColor.cgColor.converted(
+                to: CGColorSpaceCreateDeviceRGB(),
+                intent: .defaultIntent,
+                options: nil
+            ), let components = converted.components, components.count >= 3 {
+                totalR += components[0]
+                totalG += components[1]
+                totalB += components[2]
+            }
+        }
+        
+        let count = CGFloat(colors.count)
+        return Color(red: totalR / count, green: totalG / count, blue: totalB / count)
+    }
 }
