@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// Bridges Home Screen widget taps into the Progressive timer.
+/// Bridges Home Screen widget taps into the Progressive timer and Statistics.
 enum WidgetDeepLink {
     static let pendingPlayKey = "widgetPendingPlay"
 
@@ -22,6 +22,11 @@ enum WidgetDeepLink {
     /// Open Progressive without forcing a start (e.g. medium/large background tap).
     static func shouldOpenTimer(path: String) -> Bool {
         path == "start" || path == "timer"
+    }
+
+    /// Open the Statistics tab from a stats widget.
+    static func shouldOpenStatistics(path: String) -> Bool {
+        path == "statistics" || path == "stats"
     }
 
     static func consumePendingPlay() -> Bool {

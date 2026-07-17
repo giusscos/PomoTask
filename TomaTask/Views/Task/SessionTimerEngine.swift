@@ -383,5 +383,6 @@ final class SessionTimerEngine {
         stats.totalFocusTime += pendingFocusSeconds
         pendingFocusSeconds = 0
         try? modelContext.save()
+        SharedStatsSync.publish(using: modelContext)
     }
 }

@@ -13,6 +13,7 @@ let defaultAppIcon = "AppIcon"
 
 struct TabBarViewController: View {
     @Environment(Store.self) private var store
+    @Environment(\.modelContext) private var modelContext
     
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
     @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew: Bool = false
@@ -75,9 +76,14 @@ struct TabBarViewController: View {
             if hasSeenWhatsNew && !hasCompletedOnboarding {
                 hasCompletedOnboarding = true
             }
+            SharedStatsSync.publish(using: modelContext)
         }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
             guard let path = notification.userInfo?["path"] as? String else { return }
+            if WidgetDeepLink.shouldOpenStatistics(path: path) {
+                selectedTab = .statistics
+                return
+            }
             guard WidgetDeepLink.shouldOpenTimer(path: path) else { return }
             selectedTab = .progressive
             if WidgetDeepLink.shouldStartTimer(path: path) {

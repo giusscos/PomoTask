@@ -10,6 +10,7 @@ import SwiftUI
 struct TomaTaskWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TomaTaskTimerWidget()
+        TomaTaskStatsWidget()
         TomaTaskLiveActivity()
         TomaTaskAlarmLiveActivity()
     }

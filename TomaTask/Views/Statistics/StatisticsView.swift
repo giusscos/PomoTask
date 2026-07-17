@@ -81,6 +81,9 @@ struct StatisticsView: View {
             }
         }
         .navigationTitle("Statistics")
+        .onAppear {
+            SharedStatsSync.publish(from: statistics)
+        }
         .sheet(isPresented: Binding(
             get: { selectedDay != nil },
             set: { if !$0 { selectedDay = nil } }
@@ -206,12 +209,12 @@ struct StatisticsView: View {
     private var paywallContent: some View {
         VStack(spacing: 20) {
             ZStack {
-                TomatoSplashShape(seed: 42)
-                    .fill(StatisticsAggregator.splashDeep.opacity(0.9))
-                    .frame(width: 88, height: 88)
-                Image(systemName: "calendar")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(.white)
+//                TomatoSplashShape(seed: 42)
+//                    .fill(StatisticsAggregator.splashDeep.opacity(0.9))
+//                    .frame(width: 88, height: 88)
+                Image(systemName: "fireworks")
+                    .font(.system(size: 64, weight: .semibold))
+                    .foregroundStyle(OnboardingStyle.tomatoRed)
             }
 
             Text("Tomato splash calendar")

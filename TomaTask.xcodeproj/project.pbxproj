@@ -86,10 +86,13 @@
 			membershipExceptions = (
 				Helpers/FocusSessionRemote.swift,
 				Helpers/OpenAlarmAppIntent.swift,
+				Helpers/SharedStatsStore.swift,
 				Helpers/SharedTimerStore.swift,
 				Helpers/ToggleFocusTimerIntent.swift,
 				Helpers/TomaTaskAlarmMetadata.swift,
 				LiveActivity/TomaTaskActivityAttributes.swift,
+				Views/Statistics/StatisticsAggregator.swift,
+				Views/Statistics/TomatoSplashShape.swift,
 			);
 			target = AA1111112DB5700100LIVE06 /* TomaTaskWidgets */;
 		};
