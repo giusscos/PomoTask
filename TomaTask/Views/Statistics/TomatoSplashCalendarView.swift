@@ -14,7 +14,6 @@ struct TomatoSplashCalendarView: View {
 
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
-    private let pileHeight: CGFloat = 52
 
     private var monthTitle: String {
         displayedMonth.formatted(.dateTime.month(.wide).year())
@@ -84,11 +83,6 @@ struct TomatoSplashCalendarView: View {
                     }
                 }
             }
-
-            intensityLegend
-
-            Color.clear
-                .frame(height: pileHeight)
         }
         .padding(16)
         .background(
@@ -104,7 +98,6 @@ struct TomatoSplashCalendarView: View {
             if !reduceMotion {
                 TomatoAssaultOverlay(
                     targets: assaultTargets,
-                    pileHeight: pileHeight + 16,
                     animationToken: animationToken,
                     onImpact: { date in
                         reveal(date)
@@ -237,30 +230,6 @@ struct TomatoSplashCalendarView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canGoForward)
-        }
-    }
-
-    private var intensityLegend: some View {
-        HStack(spacing: 6) {
-            Text("Less")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            ForEach([0.2, 0.4, 0.65, 1.0], id: \.self) { intensity in
-                LiquidTomatoSplash(
-                    seed: UInt64(intensity * 100),
-                    color: StatisticsAggregator.splashColor(intensity: intensity),
-                    size: 14,
-                    explosiveness: 0.85,
-                    showHighlight: false
-                )
-            }
-            Text("More")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text("Goal ~90m")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
     }
 

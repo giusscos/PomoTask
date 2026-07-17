@@ -19,10 +19,9 @@ struct DayCellFramesKey: PreferenceKey {
 
 // MARK: - UIKit throw + gravity stage
 
-/// Launches tomatoes at calendar cells, then drops debris with UIKit gravity.
+/// Launches tomatoes at calendar cells. Impact debris falls away — nothing is stored.
 struct TomatoAssaultOverlay: UIViewRepresentable {
     var targets: [DayCellFrame]
-    var pileHeight: CGFloat
     var animationToken: Int
     var onImpact: (Date) -> Void
     var onFinished: () -> Void
@@ -58,11 +57,7 @@ struct TomatoAssaultOverlay: UIViewRepresentable {
 
         DispatchQueue.main.async {
             guard uiView.bounds.width > 1 else { return }
-            uiView.play(
-                targets: validTargets,
-                stageBounds: uiView.bounds,
-                pileHeight: pileHeight
-            )
+            uiView.play(targets: validTargets, stageBounds: uiView.bounds)
         }
     }
 
@@ -77,17 +72,17 @@ final class TomatoAssaultView: UIView {
 
     private var animator: UIDynamicAnimator?
     private var gravity: UIGravityBehavior?
-    private var collision: UICollisionBehavior?
     private var itemBehavior: UIDynamicItemBehavior?
     private var flyingLayers: [CALayer] = []
     private var debrisViews: [UIView] = []
     private var playGeneration = 0
+    private var cleanupTimer: Timer?
 
     private let tomatoRed = UIColor(red: 0.86, green: 0.14, blue: 0.14, alpha: 1)
     private let tomatoCoral = UIColor(red: 0.92, green: 0.38, blue: 0.36, alpha: 1)
     private let stemGreen = UIColor(red: 0.35, green: 0.55, blue: 0.28, alpha: 1)
 
-    func play(targets: [DayCellFrame], stageBounds: CGRect, pileHeight: CGFloat) {
+    func play(targets: [DayCellFrame], stageBounds: CGRect) {
         playGeneration += 1
         let generation = playGeneration
         resetPhysics()
@@ -100,9 +95,10 @@ final class TomatoAssaultView: UIView {
             return
         }
 
+        // Launch from just below the calendar so throws arc upward into cells.
         let launchOrigin = CGPoint(
             x: stageBounds.midX,
-            y: min(stageBounds.maxY - 20, stageBounds.maxY - pileHeight * 0.25)
+            y: stageBounds.maxY - 12
         )
 
         for (index, target) in sorted.enumerated() {
@@ -113,7 +109,6 @@ final class TomatoAssaultView: UIView {
                     toward: target,
                     from: launchOrigin,
                     stageBounds: stageBounds,
-                    pileHeight: pileHeight,
                     index: index
                 )
             }
@@ -130,7 +125,6 @@ final class TomatoAssaultView: UIView {
         toward target: DayCellFrame,
         from origin: CGPoint,
         stageBounds: CGRect,
-        pileHeight: CGFloat,
         index: Int
     ) {
         let tomatoSize: CGFloat = 30
@@ -176,7 +170,6 @@ final class TomatoAssaultView: UIView {
                 date: target.date,
                 focusSeconds: target.focusSeconds,
                 stageBounds: stageBounds,
-                pileHeight: pileHeight,
                 index: index
             )
         }
@@ -189,7 +182,6 @@ final class TomatoAssaultView: UIView {
         date: Date,
         focusSeconds: TimeInterval,
         stageBounds: CGRect,
-        pileHeight: CGFloat,
         index: Int
     ) {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -198,7 +190,6 @@ final class TomatoAssaultView: UIView {
         spawnDebris(
             from: point,
             stageBounds: stageBounds,
-            pileHeight: pileHeight,
             focusSeconds: focusSeconds,
             index: index
         )
@@ -207,87 +198,89 @@ final class TomatoAssaultView: UIView {
     private func spawnDebris(
         from point: CGPoint,
         stageBounds: CGRect,
-        pileHeight: CGFloat,
         focusSeconds: TimeInterval,
         index: Int
     ) {
-        ensurePhysics(stageBounds: stageBounds, pileHeight: pileHeight)
+        ensurePhysics()
 
         let intensity = CGFloat(min(1, max(0.25, focusSeconds / (90 * 60))))
-        let count = 2 + (intensity > 0.55 ? 2 : 1)
+        let count = 3 + (intensity > 0.55 ? 1 : 0)
 
         for piece in 0..<count {
-            let size = CGFloat(18 + (piece * 5) + (index % 3) * 3)
+            let size = CGFloat(12 + piece * 3 + (index % 2) * 2)
             let debris = makeSplashDebrisView(size: size, seed: index * 17 + piece, intensity: intensity)
             debris.center = CGPoint(
-                x: point.x + CGFloat(piece - 1) * 10,
-                y: point.y + 6
+                x: point.x + CGFloat(piece - 1) * 8,
+                y: point.y + 4
             )
             addSubview(debris)
             debrisViews.append(debris)
 
             gravity?.addItem(debris)
-            collision?.addItem(debris)
             itemBehavior?.addItem(debris)
 
-            let dx = CGFloat((piece % 2 == 0) ? -1 : 1) * CGFloat(50 + piece * 28)
-            let dy = CGFloat(-140 - piece * 35)
+            let dx = CGFloat((piece % 2 == 0) ? -1 : 1) * CGFloat(40 + piece * 22)
+            let dy = CGFloat(-90 - piece * 20)
             itemBehavior?.addLinearVelocity(CGPoint(x: dx, y: dy), for: debris)
-            itemBehavior?.addAngularVelocity(CGFloat((piece % 2 == 0) ? 7 : -8), for: debris)
+            itemBehavior?.addAngularVelocity(CGFloat((piece % 2 == 0) ? 6 : -7), for: debris)
         }
+
+        scheduleOffscreenCleanup(stageBounds: stageBounds)
     }
 
-    private func ensurePhysics(stageBounds: CGRect, pileHeight: CGFloat) {
+    private func ensurePhysics() {
         if animator == nil {
             animator = UIDynamicAnimator(referenceView: self)
         }
         if gravity == nil {
             let g = UIGravityBehavior()
-            g.magnitude = 1.4
+            g.magnitude = 1.7
             gravity = g
             animator?.addBehavior(g)
         }
-        if collision == nil {
-            let c = UICollisionBehavior()
-            c.translatesReferenceBoundsIntoBoundary = false
-            let floorY = max(stageBounds.midY, stageBounds.maxY - max(12, pileHeight * 0.2))
-            c.addBoundary(
-                withIdentifier: "floor" as NSString,
-                from: CGPoint(x: stageBounds.minX + 2, y: floorY),
-                to: CGPoint(x: stageBounds.maxX - 2, y: floorY)
-            )
-            c.addBoundary(
-                withIdentifier: "left" as NSString,
-                from: CGPoint(x: stageBounds.minX + 4, y: stageBounds.minY),
-                to: CGPoint(x: stageBounds.minX + 4, y: floorY)
-            )
-            c.addBoundary(
-                withIdentifier: "right" as NSString,
-                from: CGPoint(x: stageBounds.maxX - 4, y: stageBounds.minY),
-                to: CGPoint(x: stageBounds.maxX - 4, y: floorY)
-            )
-            collision = c
-            animator?.addBehavior(c)
-        }
+        // No floor / walls — debris falls straight off the stage.
         if itemBehavior == nil {
             let i = UIDynamicItemBehavior()
-            i.elasticity = 0.3
-            i.friction = 0.6
-            i.resistance = 0.3
+            i.elasticity = 0.15
+            i.friction = 0.2
+            i.resistance = 0.15
             i.allowsRotation = true
             itemBehavior = i
             animator?.addBehavior(i)
         }
     }
 
+    private func scheduleOffscreenCleanup(stageBounds: CGRect) {
+        cleanupTimer?.invalidate()
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            let cutoff = stageBounds.maxY + 40
+            let gone = self.debrisViews.filter { $0.center.y > cutoff }
+            for view in gone {
+                self.gravity?.removeItem(view)
+                self.itemBehavior?.removeItem(view)
+                view.removeFromSuperview()
+            }
+            self.debrisViews.removeAll { $0.center.y > cutoff }
+            if self.debrisViews.isEmpty {
+                timer.invalidate()
+                self.cleanupTimer = nil
+            }
+        }
+    }
+
     private func resetPhysics() {
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
         flyingLayers.forEach { $0.removeFromSuperlayer() }
         flyingLayers.removeAll()
         debrisViews.forEach { $0.removeFromSuperview() }
         debrisViews.removeAll()
         animator?.removeAllBehaviors()
         gravity = nil
-        collision = nil
         itemBehavior = nil
         animator = nil
     }
@@ -365,7 +358,7 @@ final class TomatoAssaultView: UIView {
         }
         path.close()
 
-        for _ in 0..<4 {
+        for _ in 0..<3 {
             let a = rng.nextDouble() * .pi * 2
             let dist = base * (1.1 + rng.nextDouble() * 0.7)
             let drop = base * (0.15 + rng.nextDouble() * 0.2)

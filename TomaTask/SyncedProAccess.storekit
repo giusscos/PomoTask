@@ -18,70 +18,85 @@
   ],
   "settings" : {
     "_applicationInternalID" : "6736973019",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
     "_developerTeamID" : "MA7MBQ947C",
+    "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 755688695.10553098,
+    "_lastSynchronizedDate" : 806020941.45122194,
     "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "USA",
     "_storeKitErrors" : [
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Load Products"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Purchase"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Verification"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "App Store Sync"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Subscription Status"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "App Transaction"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Manage Subscriptions Sheet"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Refund Request Sheet"
       },
       {
-        "current" : null,
         "enabled" : false,
         "name" : "Offer Code Redeem Sheet"
       }
-    ]
+    ],
+    "_timeRate" : 0
   },
   "subscriptionGroups" : [
     {
       "id" : "21571698",
       "localizations" : [
-
+        {
+          "description" : "",
+          "displayName" : "Pro Access",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro Access",
+          "locale" : "en_US"
+        }
       ],
       "name" : "PomoTask Pro Access",
       "subscriptions" : [
         {
           "adHocOffers" : [
 
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "49.99",
+              "displayPrice" : "49.99",
+              "internalID" : "6737521865_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
           ],
           "codeOffers" : [
 
@@ -90,8 +105,65 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6737521865",
-          "introductoryOffer" : null,
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
+            {
+              "description" : "Acceso completo durante un año.",
+              "displayName" : "Pro Anual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "一年完整使用權限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hant"
+            },
+            {
+              "description" : "1년 동안 전체 이용.",
+              "displayName" : "연간 프로",
+              "locale" : "ko"
+            },
+            {
+              "description" : "Acesso completo por um ano.",
+              "displayName" : "Pro Anual",
+              "locale" : "pt_BR"
+            },
+            {
+              "description" : "Volledige toegang voor één jaar.",
+              "displayName" : "Jaarlijks Pro",
+              "locale" : "nl"
+            },
+            {
+              "description" : "1年間のフルアクセス。",
+              "displayName" : "年間プロ",
+              "locale" : "ja"
+            },
+            {
+              "description" : "Full access for one year.",
+              "displayName" : "Annual Pro",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "一年完整使用权限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hans"
+            },
+            {
+              "description" : "Voller Zugang für ein Jahr.",
+              "displayName" : "Jahres-Pro",
+              "locale" : "de"
+            },
+            {
+              "description" : "Accesso completo per un anno.",
+              "displayName" : "Pro Annuale",
+              "locale" : "it"
+            },
+            {
+              "description" : "Accès complet pendant un an.",
+              "displayName" : "Pro Annuel",
+              "locale" : "fr"
+            },
             {
               "description" : "Unlock themes, app icons and more for 1 year",
               "displayName" : "Annual Pro Access",
@@ -100,7 +172,7 @@
           ],
           "productID" : "pt_4999_1y_7d0",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "PomoTask Annual $49.99",
+          "referenceName" : "Annual",
           "subscriptionGroupID" : "21571698",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -111,24 +183,85 @@
           "adHocOffers" : [
 
           ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "4.99",
+              "displayPrice" : "4.99",
+              "internalID" : "6792144579_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
+          ],
           "codeOffers" : [
 
           ],
           "displayPrice" : "4.99",
           "familyShareable" : false,
-          "groupNumber" : 1,
-          "internalID" : "6737521979",
-          "introductoryOffer" : null,
+          "groupNumber" : 2,
+          "internalID" : "6792144579",
+          "introductoryOffers" : [
+
+          ],
           "localizations" : [
             {
-              "description" : "Unlock themes, app icons and more for 1 month",
-              "displayName" : "Monthly Pro Access",
+              "description" : "Accès complet, facturé chaque semaine.",
+              "displayName" : "Pro Hebdomadaire",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Acceso completo, facturación semanal.",
+              "displayName" : "Pro Semanal",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Acesso completo, cobrado semanalmente.",
+              "displayName" : "Pro Semanal",
+              "locale" : "pt_BR"
+            },
+            {
+              "description" : "Accesso completo, fatturato ogni settimana.",
+              "displayName" : "Pro Settimanale",
+              "locale" : "it"
+            },
+            {
+              "description" : "Full access, billed weekly.",
+              "displayName" : "Weekly Pro",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Volledige toegang, wekelijks gefactureerd.",
+              "displayName" : "Wekelijks Pro",
+              "locale" : "nl"
+            },
+            {
+              "description" : "Voller Zugang, wöchentlich abgerechnet.",
+              "displayName" : "Wöchentlich Pro",
+              "locale" : "de"
+            },
+            {
+              "description" : "每周计费，完整使用权限。",
+              "displayName" : "每周 Pro",
+              "locale" : "zh_Hans"
+            },
+            {
+              "description" : "每週計費，完整使用權限。",
+              "displayName" : "每週 Pro",
+              "locale" : "zh_Hant"
+            },
+            {
+              "description" : "週ごとに請求されるフルアクセス。",
+              "displayName" : "週間プロ",
+              "locale" : "ja"
+            },
+            {
+              "description" : "매주 청구되는 전체 이용권.",
+              "displayName" : "주간 프로",
+              "locale" : "ko"
             }
           ],
-          "productID" : "pt_499_1m_7d0",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "PomoTask Monthly $4.99",
+          "productID" : "pt_499_1w",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Weekly",
           "subscriptionGroupID" : "21571698",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
@@ -139,7 +272,7 @@
     }
   ],
   "version" : {
-    "major" : 4,
+    "major" : 5,
     "minor" : 0
   }
 }
