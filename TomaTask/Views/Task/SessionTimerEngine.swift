@@ -210,6 +210,11 @@ final class SessionTimerEngine {
         guard isRunning else { return }
         pause()
     }
+
+    func handleDeepLinkPlay() {
+        guard !isRunning, !isComplete else { return }
+        start()
+    }
     
     func tearDown() {
         flushFocusStats()

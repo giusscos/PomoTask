@@ -257,9 +257,20 @@ struct ProgressiveTimerView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
-            guard let path = notification.userInfo?["path"] as? String, path == "pause", isRunning else { return }
-            isRunning = false
-            pauseTimer()
+            guard let path = notification.userInfo?["path"] as? String else { return }
+            switch path {
+            case "pause":
+                guard isRunning else { return }
+                isRunning = false
+                pauseTimer()
+            case "play":
+                guard !isRunning, !showingFocusFeedback, !showingStruggleSheet else { return }
+                awaitingPlayAfterBreak = false
+                isRunning = true
+                startTimer()
+            default:
+                break
+            }
         }
         .statusBarHidden(false)
     }

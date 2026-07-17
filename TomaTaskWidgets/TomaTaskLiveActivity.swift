@@ -12,72 +12,95 @@ struct TomaTaskLiveActivity: Widget {
         ActivityConfiguration(for: TomaTaskActivityAttributes.self) { context in
             LockScreenLiveActivityView(context: context)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let tint = TimerLiveActivityStyle.phaseColor(isBreak: context.state.isBreak)
+
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(
-                        context.state.isBreak ? "Break" : "Focus",
-                        systemImage: context.state.isBreak ? "cup.and.saucer.fill" : "brain.head.profile"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("🍅")
+                            .font(.title2)
+
+                        Spacer(minLength: 4)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(context.attributes.taskTitle)
+                                .font(.headline.weight(.bold))
+                                .fontDesign(.rounded)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+
+                            Text(expandedStatus(for: context.state))
+                                .font(.caption.weight(.semibold))
+                                .fontWidth(.condensed)
+                                .textCase(.uppercase)
+                                .tracking(1.0)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    .frame(maxWidth: 140, maxHeight: .infinity, alignment: .leading)
+                    .padding(.leading, 4)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    if context.state.isPaused {
-                        Text(formattedTime(context.state.timeRemainingWhenPaused))
-                            .font(.title2.monospacedDigit().bold())
-                    } else {
-                        Text(timerInterval: Date.now...context.state.endDate, countsDown: true)
-                            .font(.title2.monospacedDigit().bold())
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 70)
-                    }
-                }
-
-                DynamicIslandExpandedRegion(.center) {
-                    Text(context.attributes.taskTitle)
-                        .font(.headline)
-                        .lineLimit(1)
-                }
-
-                DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        Text(context.state.isPaused ? "Paused" : (context.state.isBreak ? "Break in progress" : "Focus in progress"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Link(destination: URL(string: "tomatask://pause")!) {
-                            Label("Pause", systemImage: "pause.fill")
-                                .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(.ultraThinMaterial, in: Capsule())
+                    VStack(alignment: .trailing, spacing: 6) {
+                        Link(destination: URL(string: context.state.isPaused ? "tomatask://play" : "tomatask://pause")!) {
+                            Image(systemName: context.state.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                                .font(.system(size: 36))
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.white.opacity(0.9))
                         }
-                        .opacity(context.state.isPaused ? 0.4 : 1)
-                        .disabled(context.state.isPaused)
+                        .accessibilityLabel(context.state.isPaused ? "Play" : "Pause")
+
+                        Spacer(minLength: 4)
+
+                        Group {
+                            if context.state.isPaused {
+                                Text(formattedTime(context.state.timeRemainingWhenPaused))
+                            } else {
+                                Text(timerInterval: Date.now...context.state.endDate, countsDown: true)
+                            }
+                        }
+                        .font(.system(size: 34, weight: .heavy, design: .rounded).monospacedDigit())
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(minWidth: 110, alignment: .trailing)
                     }
+                    .frame(minWidth: 110, maxHeight: .infinity, alignment: .trailing)
+                    .padding(.trailing, 4)
                 }
             } compactLeading: {
-                Image(systemName: context.state.isBreak ? "cup.and.saucer.fill" : "timer")
-                    .foregroundStyle(context.state.isBreak ? .orange : .accentColor)
+                Text("🍅")
+                    .font(.body)
             } compactTrailing: {
                 if context.state.isPaused {
                     Text(formattedTime(context.state.timeRemainingWhenPaused))
-                        .font(.caption.monospacedDigit())
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .fontDesign(.rounded)
+                        .foregroundStyle(tint)
                 } else {
                     Text(timerInterval: Date.now...context.state.endDate, countsDown: true)
-                        .font(.caption.monospacedDigit())
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .fontDesign(.rounded)
+                        .foregroundStyle(tint)
                         .frame(width: 50)
                         .multilineTextAlignment(.trailing)
                 }
             } minimal: {
-                Image(systemName: context.state.isBreak ? "cup.and.saucer.fill" : "timer")
+                Text("🍅")
+                    .font(.body)
             }
             .widgetURL(URL(string: "tomatask://timer"))
-            .keylineTint(context.state.isBreak ? .orange : .accentColor)
+            .keylineTint(tint)
         }
+    }
+
+    private func expandedStatus(for state: TomaTaskActivityAttributes.ContentState) -> String {
+        if state.isPaused {
+            return state.isBreak ? "Break · Paused" : "Focus · Paused"
+        }
+        return state.isBreak ? "Break" : "Focus"
     }
 
     private func formattedTime(_ time: TimeInterval) -> String {
@@ -87,51 +110,92 @@ struct TomaTaskLiveActivity: Widget {
     }
 }
 
+// MARK: - Lock Screen
+
 private struct LockScreenLiveActivityView: View {
     let context: ActivityViewContext<TomaTaskActivityAttributes>
 
-    var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.taskTitle)
-                    .font(.headline)
-                    .lineLimit(1)
+    private var phaseColor: Color {
+        TimerLiveActivityStyle.phaseColor(isBreak: context.state.isBreak)
+    }
 
-                Text(context.state.isBreak ? "Break" : "Focus")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 8) {
-                if context.state.isPaused {
-                    Text(formattedTime(context.state.timeRemainingWhenPaused))
-                        .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
-                    Text("Paused")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(timerInterval: Date.now...context.state.endDate, countsDown: true)
-                        .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
-                        .multilineTextAlignment(.trailing)
-                        .frame(minWidth: 100, alignment: .trailing)
-                }
-
-                Link(destination: URL(string: "tomatask://pause")!) {
-                    Label("Pause", systemImage: "pause.fill")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: Capsule())
-                }
-                .opacity(context.state.isPaused ? 0.4 : 1)
-                .disabled(context.state.isPaused)
-            }
+    private var phaseLabel: String {
+        if context.state.isPaused {
+            return context.state.isBreak ? "Break · Paused" : "Focus · Paused"
         }
-        .padding()
-        .activityBackgroundTint(Color.black.opacity(0.2))
-        .activitySystemActionForegroundColor(.primary)
+        return context.state.isBreak ? "Break" : "Focus"
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            phaseColor
+
+            Image("tomato_stem")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 140)
+                .offset(y: -46)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+//                    Text("🍅")
+//                        .font(.title2)
+
+                    Spacer(minLength: 8)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(context.attributes.taskTitle)
+                            .font(.title3.weight(.bold))
+                            .fontDesign(.rounded)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                        Text(phaseLabel)
+                            .font(.subheadline.weight(.semibold))
+                            .fontWidth(.condensed)
+                            .opacity(0.75)
+                            .textCase(.uppercase)
+                            .tracking(1.2)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: 8)
+
+                VStack(alignment: .trailing, spacing: 6) {
+                    Link(destination: URL(string: context.state.isPaused ? "tomatask://play" : "tomatask://pause")!) {
+                        Image(systemName: context.state.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                            .font(.system(size: 36))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                    }
+                    .accessibilityLabel(context.state.isPaused ? "Play" : "Pause")
+
+                    Spacer(minLength: 8)
+
+                    Group {
+                        if context.state.isPaused {
+                            Text(formattedTime(context.state.timeRemainingWhenPaused))
+                        } else {
+                            Text(timerInterval: Date.now...context.state.endDate, countsDown: true)
+                        }
+                    }
+                    .font(.system(size: 36, weight: .heavy, design: .rounded).monospacedDigit())
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(minWidth: 100, alignment: .trailing)
+                }
+            }
+            .frame(minHeight: 88)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+            .foregroundStyle(.white)
+        }
+        .activityBackgroundTint(phaseColor)
+        .activitySystemActionForegroundColor(.white)
     }
 
     private func formattedTime(_ time: TimeInterval) -> String {

@@ -67,13 +67,22 @@ enum SessionAlarmScheduler {
             : title
         let countdownTitle = isBreak ? "Break" : "Focus"
 
+        // Open brings the user back into the session flow (feedback / next phase).
+        // AlarmKit only allows one secondary action — prefer Open over "+5 min"
+        // because snooze wouldn't sync with in-app Progressive/Classic timer state.
         let alert = AlarmPresentation.Alert(
             title: LocalizedStringResource(stringLiteral: label),
             stopButton: AlarmButton(
                 text: "Done",
                 textColor: .white,
                 systemImageName: "checkmark"
-            )
+            ),
+            secondaryButton: AlarmButton(
+                text: "Open",
+                textColor: .white,
+                systemImageName: "arrow.up.forward.app.fill"
+            ),
+            secondaryButtonBehavior: .custom
         )
 
         let countdown = AlarmPresentation.Countdown(
@@ -101,8 +110,12 @@ enum SessionAlarmScheduler {
                 paused: paused
             ),
             metadata: TomaTaskAlarmMetadata(isBreak: isBreak),
-            tintColor: isBreak ? .orange : Color.accentColor
+            tintColor: isBreak
+                ? Color(red: 0.72, green: 0.22, blue: 0.28)
+                : Color(red: 0.86, green: 0.14, blue: 0.14)
         )
+
+        let openIntent = OpenAlarmAppIntent(alarmID: id.uuidString)
 
         do {
             _ = try await AlarmManager.shared.schedule(
@@ -110,6 +123,9 @@ enum SessionAlarmScheduler {
                 configuration: .timer(
                     duration: duration,
                     attributes: attributes,
+                    // Done / system stop also launches the app when possible.
+                    stopIntent: openIntent,
+                    secondaryIntent: openIntent,
                     sound: .default
                 )
             )

@@ -154,8 +154,15 @@ struct TaskView: View {
             engine.handleBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
-            guard let path = notification.userInfo?["path"] as? String, path == "pause" else { return }
-            engine.handleDeepLinkPause()
+            guard let path = notification.userInfo?["path"] as? String else { return }
+            switch path {
+            case "pause":
+                engine.handleDeepLinkPause()
+            case "play":
+                engine.handleDeepLinkPlay()
+            default:
+                break
+            }
         }
         .statusBarHidden(false)
     }
