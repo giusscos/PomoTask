@@ -23,7 +23,12 @@ final class SessionTimerEngine {
     private var timer: Timer?
     private var pendingFocusSeconds: TimeInterval = 0
     private var sessionStats: Statistics?
-    
+
+    // Wall-clock anchor — recomputed each tick so Timer drift is impossible.
+    private var startAnchor: Date?
+    private var timeAtAnchor: TimeInterval = 0
+    private var timerSecondsElapsed: Int = 0
+
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     private var backgroundTime: TimeInterval = 0
     private var backgroundStartDate: Date?
@@ -37,8 +42,10 @@ final class SessionTimerEngine {
     private weak var modelContext: ModelContext?
     
     var formattedTime: String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
+        // ceil keeps "25:00" visible for the full first second rather than flooring immediately.
+        let displaySeconds = time > 0 ? Int(time.rounded(.up)) : 0
+        let minutes = displaySeconds / 60
+        let seconds = displaySeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
@@ -127,16 +134,24 @@ final class SessionTimerEngine {
             }
         }
         
+        // Anchor to wall-clock so drift is zero regardless of run-loop delays.
+        startAnchor = Date()
+        timeAtAnchor = time
+        timerSecondsElapsed = 0
         isRunning = true
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.tick()
-            }
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            // Timer fires on main RunLoop; assumeIsolated skips the Task allocation.
+            MainActor.assumeIsolated { self.tick() }
         }
+        // .common mode keeps ticking while the user interacts with the UI.
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
     
     func pause() {
+        startAnchor = nil
         flushFocusStats()
         isRunning = false
         timer?.invalidate()
@@ -152,6 +167,7 @@ final class SessionTimerEngine {
     }
     
     func stop() {
+        startAnchor = nil
         flushFocusStats()
         AlarmPlayer.shared.stop()
         SessionAlarmScheduler.cancel()
@@ -230,6 +246,7 @@ final class SessionTimerEngine {
     }
     
     func tearDown() {
+        startAnchor = nil
         flushFocusStats()
         isRunning = false
         timer?.invalidate()
@@ -243,16 +260,27 @@ final class SessionTimerEngine {
     // MARK: - Private
     
     private func tick() {
-        guard time > 0 else {
-            completePhase()
-            return
-        }
-        
-        time -= 1
+        guard let anchor = startAnchor else { return }
+
+        let elapsed = Date().timeIntervalSince(anchor)
+        let newTime = max(0, timeAtAnchor - elapsed)
+
+        // Count whole-second crossings rather than trusting timer fire rate.
         if !isBreak {
-            pendingFocusSeconds += 1
+            let newSecondsElapsed = Int(elapsed)
+            let delta = newSecondsElapsed - timerSecondsElapsed
+            if delta > 0 {
+                pendingFocusSeconds += TimeInterval(delta)
+                timerSecondsElapsed = newSecondsElapsed
+            }
         }
+
+        time = newTime
         updateProgressVisuals()
+
+        if newTime == 0 {
+            completePhase()
+        }
     }
     
     private func completePhase() {
@@ -286,8 +314,9 @@ final class SessionTimerEngine {
         isRunning = false
         timer?.invalidate()
         timer = nil
+        startAnchor = nil
         LiveActivityManager.endAll()
-        
+
         if isComplete {
             time = maxDuration
             progress = 1
@@ -321,8 +350,12 @@ final class SessionTimerEngine {
         }
         time = max(0, backgroundTime - elapsed)
         backgroundStartDate = nil
+        // Re-anchor so the foreground timer resumes from the correct position.
+        startAnchor = Date()
+        timeAtAnchor = time
+        timerSecondsElapsed = 0
         updateProgressVisuals()
-        
+
         if time == 0 {
             completePhase()
         } else {

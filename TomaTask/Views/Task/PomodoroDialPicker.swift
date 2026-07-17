@@ -67,7 +67,7 @@ struct PomodoroDialPicker: View {
                     drawRuler(ctx: ctx, size: size)
                 }
                 .frame(height: 80)
-                .animation(isDragging ? nil : .linear(duration: 1), value: remainingMinutes)
+                .animation(isDragging ? nil : .linear(duration: 0.1), value: remainingMinutes)
                 
                 Image(systemName: "arrowtriangle.down.fill")
                     .font(.system(size: 11, weight: .bold))

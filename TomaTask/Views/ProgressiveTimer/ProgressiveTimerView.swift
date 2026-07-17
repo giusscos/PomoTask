@@ -76,7 +76,12 @@ struct ProgressiveTimerView: View {
     // Accrue focus seconds locally; flush to SwiftData on session boundaries
     @State private var pendingFocusSeconds: TimeInterval = 0
     @State private var sessionStats: Statistics?
-    
+
+    // Wall-clock anchor — recomputed each tick so Timer drift is impossible.
+    @State private var startAnchor: Date?
+    @State private var timeAtAnchor: TimeInterval = 0
+    @State private var timerSecondsElapsed: Int = 0
+
     // Background timer state
     @State private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     @State private var backgroundTime: TimeInterval = 0
@@ -391,8 +396,9 @@ struct ProgressiveTimerView: View {
     }
     
     func formattedTime() -> String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
+        let displaySeconds = time > 0 ? Int(time.rounded(.up)) : 0
+        let minutes = displaySeconds / 60
+        let seconds = displaySeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
@@ -512,29 +518,47 @@ struct ProgressiveTimerView: View {
             }
         }
         
+        // Anchor to wall-clock so drift is zero regardless of run-loop delays.
+        startAnchor = Date()
+        timeAtAnchor = time
+        timerSecondsElapsed = 0
+
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            if time > 0 {
-                isRunning = true
-                
-                time -= 1
-                if !isBreakTime {
-                    pendingFocusSeconds += 1
+        let t = Timer(timeInterval: 0.1, repeats: true) { _ in
+            guard let anchor = startAnchor else { return }
+
+            let elapsed = Date().timeIntervalSince(anchor)
+            let newTime = max(0, timeAtAnchor - elapsed)
+
+            if !isBreakTime {
+                let newSecondsElapsed = Int(elapsed)
+                let delta = newSecondsElapsed - timerSecondsElapsed
+                if delta > 0 {
+                    pendingFocusSeconds += TimeInterval(delta)
+                    timerSecondsElapsed = newSecondsElapsed
                 }
+            }
+
+            if newTime > 0 {
+                time = newTime
             } else {
+                time = 0
                 pauseTimer()
                 Task { @MainActor in
                     SessionCompletionAlert.handleSessionFinished(isBreak: isBreakTime)
                 }
-                
+
                 flushFocusStats()
                 let stats = ensureSessionStats()
                 stats.timersCompleted += 1
                 try? modelContext.save()
-                
+
                 handlePhaseCompletion()
             }
         }
+        // .common mode keeps ticking while the user interacts with the UI.
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
     }
     
     private func handlePhaseCompletion() {
@@ -553,6 +577,7 @@ struct ProgressiveTimerView: View {
     }
     
     func pauseTimer() {
+        startAnchor = nil
         flushFocusStats()
         isRunning = false
         timer?.invalidate()
@@ -573,6 +598,7 @@ struct ProgressiveTimerView: View {
     }
     
     func resetTimer() {
+        startAnchor = nil
         flushFocusStats()
         AlarmPlayer.shared.stop()
         SessionAlarmScheduler.cancel()
@@ -624,7 +650,11 @@ struct ProgressiveTimerView: View {
         }
         time = max(0, backgroundTime - elapsedTime)
         backgroundStartDate = nil
-        
+        // Re-anchor so the foreground timer resumes from the correct position.
+        startAnchor = Date()
+        timeAtAnchor = time
+        timerSecondsElapsed = 0
+
         if time == 0 {
             handleTimerCompletion()
         } else {
