@@ -38,7 +38,10 @@ struct WatchEditTask: View {
                 
                 Picker("Repeat", selection: $task.repetition) {
                     ForEach(1..<10) { time in
-                        Text("\(time) \(time == 1 ? "time" : "times")").tag(time)
+                        Text(time == 1
+                             ? String(localized: "\(time) time")
+                             : String(localized: "\(time) times"))
+                            .tag(time)
                     }
                 }
             } header: {

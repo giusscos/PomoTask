@@ -25,7 +25,7 @@ struct WatchTaskRow: View {
                     .bold()
                     .foregroundStyle(Color.accentColor)
                 
-                Text(" min for ")
+                Text(String(localized: " min for "))
                     .font(.caption2)
                 
                 Text("\(task.repetition)")
@@ -33,7 +33,9 @@ struct WatchTaskRow: View {
                     .bold()
                     .foregroundStyle(Color.accentColor)
                 
-                Text(" \(task.repetition == 1 ? "time" : "times")")
+                Text(task.repetition == 1
+                     ? String(localized: " time")
+                     : String(localized: " times"))
                     .font(.caption2)
             }
         }

@@ -53,7 +53,7 @@ struct EditTask: View {
                 Section("Category") {
                     Picker("Category", selection: $category) {
                         ForEach(TomaTask.Category.allCases) { cat in
-                            Text(cat.rawValue).tag(cat)
+                            Text(cat.displayName).tag(cat)
                         }
                     }
                 }
@@ -87,7 +87,8 @@ struct EditTask: View {
                 } header: {
                     Text("Duration")
                 } footer: {
-                    Text("Total: \(totalFocusTime) min focus + \(totalBreakTime) min break = \(totalFocusTime + totalBreakTime) min")
+                    Text("Total: \(totalFocusTime) min focus + \(totalBreakTime) min break = \(totalFocusTime + totalBreakTime) min",
+                         comment: "Timer edit footer summarizing focus and break totals")
                 }
                 
             }

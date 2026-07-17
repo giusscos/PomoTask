@@ -30,11 +30,13 @@ enum SharedTimerStore {
         var phaseDuration: TimeInterval
 
         var subtitle: String {
-            if !isActive { return "Focus" }
+            if !isActive { return String(localized: "Focus") }
             if isRunning {
-                return isBreak ? "Break" : "Focus"
+                return isBreak ? String(localized: "Break") : String(localized: "Focus")
             }
-            return isBreak ? "Break · Paused" : "Focus · Paused"
+            return isBreak
+                ? String(localized: "Break · Paused")
+                : String(localized: "Focus · Paused")
         }
 
         var displayedRemaining: TimeInterval {
@@ -50,7 +52,7 @@ enum SharedTimerStore {
             isBreak: false,
             endDate: .now,
             remainingWhenPaused: 5 * 60,
-            title: "Progressive",
+            title: String(localized: "Progressive"),
             phaseDuration: 5 * 60
         )
     }

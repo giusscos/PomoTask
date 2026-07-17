@@ -21,10 +21,12 @@ enum WatchSessionNotifier {
         cancel()
 
         let content = UNMutableNotificationContent()
-        content.title = isBreak ? "Break complete" : "Focus complete"
+        content.title = isBreak
+            ? String(localized: "Break complete")
+            : String(localized: "Focus complete")
         content.body = isBreak
-            ? "Break is over — ready when you are."
-            : "Focus block finished. How did it feel?"
+            ? String(localized: "Break is over — ready when you are.")
+            : String(localized: "Focus block finished. How did it feel?")
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(

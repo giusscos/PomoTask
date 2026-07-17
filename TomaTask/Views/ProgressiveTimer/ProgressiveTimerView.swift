@@ -50,9 +50,16 @@ enum ProgressiveNextAction {
 
 struct ProgressiveTimerView: View {
     enum ColorMode: String, CaseIterable, Identifiable {
-        case solid = "Solid"
-        case mesh = "Gradient"
-        var id: String { self.rawValue }
+        case solid
+        case mesh
+        var id: String { rawValue }
+        
+        var displayName: String {
+            switch self {
+            case .solid: String(localized: "Solid")
+            case .mesh: String(localized: "Gradient")
+            }
+        }
     }
     
     @Environment(\.modelContext) private var modelContext
@@ -101,16 +108,16 @@ struct ProgressiveTimerView: View {
     
     private var toolbarSubtitle: String {
         if awaitingPlayAfterBreak {
-            return "Break over · ready when you are"
+            return String(localized: "Break over · ready when you are")
         }
         if isBreakTime {
-            return "Break"
+            return String(localized: "Break")
         }
         let next = ProgressiveDuration.increased(lastFocusDuration)
         if next > lastFocusDuration {
-            return "Focus · building to \(ProgressiveDuration.minutesLabel(next))"
+            return String(localized: "Focus · building to \(ProgressiveDuration.minutesLabel(next))")
         }
-        return "Focus · \(ProgressiveDuration.minutesLabel(lastFocusDuration))"
+        return String(localized: "Focus · \(ProgressiveDuration.minutesLabel(lastFocusDuration))")
     }
     
     var body: some View {
@@ -755,21 +762,21 @@ struct FocusFeedbackSheet: View {
             VStack(spacing: 12) {
                 feedbackButton(
                     title: "In the flow",
-                    subtitle: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(flowNext)) · starts next",
+                    subtitle: String(localized: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(flowNext)) · starts next"),
                     background: Color.accentColor,
                     action: onFlow
                 )
                 
                 feedbackButton(
                     title: "A bit much",
-                    subtitle: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(shorterNext)) · tap play when ready",
+                    subtitle: String(localized: "\(ProgressiveDuration.minutesLabel(currentFocusSeconds)) → \(ProgressiveDuration.minutesLabel(shorterNext)) · tap play when ready"),
                     background: Color.gray,
                     action: onABitMuch
                 )
                 
                 feedbackButton(
                     title: "Need a break",
-                    subtitle: "\(ProgressiveDuration.minutesLabel(breakNext)) break · starts next",
+                    subtitle: String(localized: "\(ProgressiveDuration.minutesLabel(breakNext)) break · starts next"),
                     background: Color.red,
                     action: onNeedBreak
                 )

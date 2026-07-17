@@ -335,9 +335,9 @@ struct TomatoSplashCalendarView: View {
     private func accessibilityLabel(for date: Date, focus: TimeInterval) -> String {
         let day = date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
         if focus > 0 {
-            return "\(day), \(StatisticsAggregator.formatFocusTime(focus)) focused"
+            return String(localized: "\(day), \(StatisticsAggregator.formatFocusTime(focus)) focused")
         }
-        return "\(day), no focus"
+        return String(localized: "\(day), no focus")
     }
 
     private func shiftMonth(by value: Int) {

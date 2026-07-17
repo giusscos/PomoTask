@@ -1,0 +1,102 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "PomoTask"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TomaTask"
+          }
+        }
+      }
+    },
+    "NSAlarmKitUsageDescription" : {
+      "comment" : "Privacy - AlarmKit Usage Description",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask plant Alarme, damit du das Ende von Fokus oder Pause hörst — auch im Lautlos- oder Fokusmodus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask schedules alarms so you hear when a focus or break session ends, even in Silent mode or Focus."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask programa alarmas para que oigas el fin de un enfoque o descanso, incluso en Silencio o Concentración."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask planifie des alarmes pour signaler la fin d’un focus ou d’une pause, même en mode Silencieux ou Concentration."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask programma sveglie così senti quando finisce un focus o una pausa, anche in Silenzioso o Concentrazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTaskは集中または休憩の終了時にアラームを鳴らし、サイレントや集中モードでも聞こえるようにします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask는 집중이나 휴식이 끝날 때 알람을 울려 무음이나 집중 모드에서도 들을 수 있게 합니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask plant alarmen zodat je hoort wanneer focus of pauze eindigt, ook in Stil of Focus."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O PomoTask agenda alarmes para você ouvir o fim de um foco ou pausa, mesmo no Silencioso ou Foco."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask 会安排闹钟，以便在专注或休息结束时提醒你，即使处于静音或专注模式。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PomoTask 會安排鬧鐘，以便在專注或休息結束時提醒你，即使處於靜音或專注模式。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -11,7 +11,7 @@ struct TaskRow: View {
     var task: TomaTask
     
     private var totalFocusTime: Int { task.maxDuration * task.repetition }
-    private var categoryEmoji: String { String(task.category.rawValue.first ?? "🍅") }
+    private var categoryEmoji: String { task.category.emoji }
     private let maxDots = 6
     
     var body: some View {

@@ -39,9 +39,9 @@ enum StatisticsAggregator {
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
         if hours > 0 {
-            return "\(hours)h \(minutes)m"
+            return String(localized: "\(hours)h \(minutes)m")
         }
-        return "\(minutes)m"
+        return String(localized: "\(minutes)m")
     }
 
     static func currentStreak(focusByDay: [Date: TimeInterval], calendar: Calendar = .current, now: Date = Date()) -> Int {

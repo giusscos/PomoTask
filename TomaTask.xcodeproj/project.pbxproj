@@ -75,6 +75,7 @@
 				Helpers/SharedTimerStore.swift,
 				Helpers/SharedTimerSync.swift,
 				Helpers/WatchSessionManager.swift,
+				Localizable.xcstrings,
 				Model/Statistics.swift,
 				Model/Store.swift,
 				Model/TomaTask.swift,
@@ -91,6 +92,7 @@
 				Helpers/ToggleFocusTimerIntent.swift,
 				Helpers/TomaTaskAlarmMetadata.swift,
 				LiveActivity/TomaTaskActivityAttributes.swift,
+				Localizable.xcstrings,
 				Views/Statistics/StatisticsAggregator.swift,
 				Views/Statistics/TomatoSplashShape.swift,
 			);
@@ -293,6 +295,16 @@
 			knownRegions = (
 				en,
 				Base,
+				ja,
+				de,
+				ko,
+				fr,
+				es,
+				"pt-BR",
+				it,
+				"zh-Hans",
+				"zh-Hant",
+				nl,
 			);
 			mainGroup = 68617FB72CA43D28003E906E;
 			minimizedProjectReferenceProxies = 1;

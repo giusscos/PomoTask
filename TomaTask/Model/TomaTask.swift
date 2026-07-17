@@ -18,12 +18,51 @@ class TomaTask  {
     var category: Category = Category.work
     
     enum Category: String, CaseIterable, Codable, Identifiable {
-        case work = "💼 Work"
-        case study = "🧠 Study"
-        case home = "🏠 Home"
-        case wealth = "🫀 Wealth"
+        case work
+        case study
+        case home
+        case wealth
         
         var id: String { rawValue }
+        
+        var emoji: String {
+            switch self {
+            case .work: "💼"
+            case .study: "🧠"
+            case .home: "🏠"
+            case .wealth: "🫀"
+            }
+        }
+        
+        var localizedName: String {
+            switch self {
+            case .work: String(localized: "Work")
+            case .study: String(localized: "Study")
+            case .home: String(localized: "Home")
+            case .wealth: String(localized: "Wealth")
+            }
+        }
+        
+        var displayName: String {
+            "\(emoji) \(localizedName)"
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            switch raw {
+            case "work", "💼 Work":
+                self = .work
+            case "study", "🧠 Study":
+                self = .study
+            case "home", "🏠 Home":
+                self = .home
+            case "wealth", "🫀 Wealth":
+                self = .wealth
+            default:
+                self = .work
+            }
+        }
     }
     
     init(

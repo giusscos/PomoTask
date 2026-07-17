@@ -56,8 +56,12 @@ enum SessionCompletionAlert {
         guard isNotificationEnabled || isAlarmEnabled else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = isBreak ? "Break Time Complete" : "Focus Time Complete"
-        content.body = "Your \(isBreak ? "break" : "focus") session has ended."
+        content.title = isBreak
+            ? String(localized: "Break Time Complete")
+            : String(localized: "Focus Time Complete")
+        content.body = isBreak
+            ? String(localized: "Your break session has ended.")
+            : String(localized: "Your focus session has ended.")
         content.sound = isAlarmEnabled ? .default : nil
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(timeInterval, 1), repeats: false)
@@ -78,8 +82,12 @@ enum SessionCompletionAlert {
 
     private static func deliverImmediateNotification(isBreak: Bool) {
         let content = UNMutableNotificationContent()
-        content.title = isBreak ? "Break Time Complete" : "Focus Time Complete"
-        content.body = "Your \(isBreak ? "break" : "focus") session has ended."
+        content.title = isBreak
+            ? String(localized: "Break Time Complete")
+            : String(localized: "Focus Time Complete")
+        content.body = isBreak
+            ? String(localized: "Your break session has ended.")
+            : String(localized: "Your focus session has ended.")
         let shouldPlaySound = isAlarmEnabled && !SessionAlarmScheduler.usesAlarmKit
         content.sound = shouldPlaySound ? .default : nil
 

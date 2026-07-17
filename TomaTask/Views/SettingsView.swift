@@ -5,13 +5,18 @@
 //  Created by Giuseppe Cosenza on 01/11/24.
 //
 
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(Store.self) private var store
+    @Environment(\.modelContext) private var modelContext
     @Binding var appIcon: String
     @State var showSheet: Bool = false
     @State var showManageSheet: Bool = false
+#if DEBUG
+    @State private var showSeedConfirmation = false
+#endif
 
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage(SessionAlertStorage.notificationEnabled) private var notificationEnabled = true
@@ -27,6 +32,9 @@ struct SettingsView: View {
                 appIconCard
                 sessionAlertsSection
                 supportSection
+#if DEBUG
+                developerSection
+#endif
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -37,6 +45,13 @@ struct SettingsView: View {
             SubscriptionStoreContentView()
         }
         .manageSubscriptionsSheet(isPresented: $showManageSheet)
+#if DEBUG
+        .alert("Screenshot data seeded", isPresented: $showSeedConfirmation) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Sample tasks and focus stats were added for App Store screenshots.")
+        }
+#endif
     }
 
     // MARK: - Promo
@@ -236,6 +251,47 @@ struct SettingsView: View {
         .padding(16)
         .contentShape(Rectangle())
     }
+
+#if DEBUG
+    // MARK: - Developer
+
+    private var developerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Developer")
+                .font(.headline.weight(.semibold))
+                .fontDesign(.rounded)
+
+            VStack(spacing: 0) {
+                Button {
+                    do {
+                        try ScreenshotDataSeeder.seed(into: modelContext)
+                        showSeedConfirmation = true
+                    } catch {
+                        print("Failed to seed screenshot data: \(error)")
+                    }
+                } label: {
+                    HStack {
+                        Label("Add screenshot mock data", systemImage: "photo.on.rectangle.angled")
+                            .font(.body.weight(.semibold))
+                            .fontDesign(.rounded)
+                            .foregroundStyle(OnboardingStyle.tomatoRed)
+
+                        Spacer()
+                    }
+                    .padding(16)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .settingsCardChrome()
+
+            Text("DEBUG only. Replaces existing tasks and stats with sample data for App Store screenshots.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fontDesign(.rounded)
+        }
+    }
+#endif
 }
 
 private extension View {

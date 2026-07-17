@@ -191,7 +191,7 @@ enum FocusSessionRemote {
                     stopButton: AlarmButton(text: "Done", textColor: .white, systemImageName: "checkmark")
                 ),
                 countdown: AlarmPresentation.Countdown(
-                    title: LocalizedStringResource(stringLiteral: isBreak ? "Break" : "Focus"),
+                    title: isBreak ? LocalizedStringResource("Break") : LocalizedStringResource("Focus"),
                     pauseButton: AlarmButton(text: "Pause", textColor: .orange, systemImageName: "pause.fill")
                 ),
                 paused: AlarmPresentation.Paused(

@@ -62,16 +62,16 @@ enum SessionAlarmScheduler {
         cancel()
 
         let id = UUID()
-        let label = title.isEmpty
+        let labelResource: LocalizedStringResource = title.isEmpty
             ? (isBreak ? "Break complete" : "Focus complete")
-            : title
-        let countdownTitle = isBreak ? "Break" : "Focus"
+            : LocalizedStringResource(stringLiteral: title)
+        let countdownTitle: LocalizedStringResource = isBreak ? "Break" : "Focus"
 
         // Open brings the user back into the session flow (feedback / next phase).
         // AlarmKit only allows one secondary action — prefer Open over "+5 min"
         // because snooze wouldn't sync with in-app Progressive/Classic timer state.
         let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: label),
+            title: labelResource,
             stopButton: AlarmButton(
                 text: "Done",
                 textColor: .white,
@@ -86,7 +86,7 @@ enum SessionAlarmScheduler {
         )
 
         let countdown = AlarmPresentation.Countdown(
-            title: LocalizedStringResource(stringLiteral: countdownTitle),
+            title: countdownTitle,
             pauseButton: AlarmButton(
                 text: "Pause",
                 textColor: .orange,
@@ -95,7 +95,7 @@ enum SessionAlarmScheduler {
         )
 
         let paused = AlarmPresentation.Paused(
-            title: LocalizedStringResource(stringLiteral: "Paused"),
+            title: "Paused",
             resumeButton: AlarmButton(
                 text: "Resume",
                 textColor: .green,
