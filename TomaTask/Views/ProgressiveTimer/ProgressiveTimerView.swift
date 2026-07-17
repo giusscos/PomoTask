@@ -240,6 +240,8 @@ struct ProgressiveTimerView: View {
             selectedTime = defaultTimeStart
             lastFocusDuration = defaultTimeStart
             UIApplication.shared.isIdleTimerDisabled = preventScreenLock
+            adoptSharedSessionIfNeeded()
+            consumeWidgetPendingPlayIfNeeded()
         }
         .onDisappear {
             resetTimer()
@@ -256,6 +258,9 @@ struct ProgressiveTimerView: View {
                 updateTimerFromBackground()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .focusSessionRemoteToggle)) { _ in
+            handleRemoteToggleIfNeeded()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
             guard let path = notification.userInfo?["path"] as? String else { return }
             switch path {
@@ -264,10 +269,11 @@ struct ProgressiveTimerView: View {
                 isRunning = false
                 pauseTimer()
             case "play":
-                guard !isRunning, !showingFocusFeedback, !showingStruggleSheet else { return }
-                awaitingPlayAfterBreak = false
-                isRunning = true
-                startTimer()
+                startFromDeepLink()
+            case "start":
+                // Tab switch may remount this view; pending flag covers that race.
+                WidgetDeepLink.pendingPlay = true
+                startFromDeepLink()
             default:
                 break
             }
@@ -309,6 +315,67 @@ struct ProgressiveTimerView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isRunning ? "Pause" : "Start")
+    }
+
+    private func consumeWidgetPendingPlayIfNeeded() {
+        guard WidgetDeepLink.consumePendingPlay() else { return }
+        // Wait a beat so the tab transition finishes before starting.
+        DispatchQueue.main.async {
+            startFromDeepLink()
+        }
+    }
+
+    private func startFromDeepLink() {
+        guard !isRunning, !showingFocusFeedback, !showingStruggleSheet else { return }
+        awaitingPlayAfterBreak = false
+        isRunning = true
+        startTimer()
+        WidgetDeepLink.pendingPlay = false
+    }
+
+    private func toggleFromRemote() {
+        if isRunning {
+            pauseTimer()
+        } else {
+            startFromDeepLink()
+        }
+    }
+
+    private func handleRemoteToggleIfNeeded() {
+        let snapshot = SharedTimerStore.load()
+        let ownsSession = isRunning || awaitingPlayAfterBreak || isBreakTime
+        let progressiveIdle = !snapshot.isActive || snapshot.title == "Progressive" || snapshot.title == "Break"
+        guard ownsSession || progressiveIdle else { return }
+        FocusSessionRemote.markHandled()
+        toggleFromRemote()
+    }
+
+    private func adoptSharedSessionIfNeeded() {
+        let snapshot = SharedTimerStore.load()
+        guard snapshot.isActive else {
+            SharedTimerSync.publishIdle(phaseDuration: selectedTime)
+            return
+        }
+
+        isBreakTime = snapshot.isBreak
+        selectedTime = snapshot.phaseDuration
+        if snapshot.isBreak {
+            // Keep progressive focus memory intact for after break.
+        } else {
+            lastFocusDuration = snapshot.phaseDuration
+        }
+
+        if snapshot.isRunning {
+            time = snapshot.displayedRemaining
+            guard time > 0 else { return }
+            isRunning = true
+            awaitingPlayAfterBreak = false
+            startTimer()
+        } else {
+            time = snapshot.remainingWhenPaused
+            isRunning = false
+            awaitingPlayAfterBreak = !snapshot.isBreak && snapshot.remainingWhenPaused > 0
+        }
     }
     
     private var struggleButton: some View {
@@ -426,6 +493,12 @@ struct ProgressiveTimerView: View {
             timeRemaining: time,
             isBreak: isBreakTime
         )
+        SharedTimerSync.publishRunning(
+            title: isBreakTime ? "Break" : "Progressive",
+            timeRemaining: time,
+            phaseDuration: selectedTime,
+            isBreak: isBreakTime
+        )
         
         Task {
             if SessionAlarmScheduler.hasActiveAlarm {
@@ -487,8 +560,15 @@ struct ProgressiveTimerView: View {
         if time > 0 {
             SessionAlarmScheduler.pause()
             LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: true)
+            SharedTimerSync.publishPaused(
+                title: isBreakTime ? "Break" : "Progressive",
+                timeRemaining: time,
+                phaseDuration: selectedTime,
+                isBreak: isBreakTime
+            )
         } else {
             LiveActivityManager.endAll()
+            SharedTimerSync.publishIdle(phaseDuration: selectedTime)
         }
     }
     
@@ -499,6 +579,7 @@ struct ProgressiveTimerView: View {
         isRunning = false
         timer?.invalidate()
         LiveActivityManager.endAll()
+        SharedTimerSync.publishIdle(phaseDuration: defaultTimeStart)
         
         isBreakTime = false
         awaitingPlayAfterBreak = false
@@ -548,6 +629,12 @@ struct ProgressiveTimerView: View {
             handleTimerCompletion()
         } else {
             LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: false)
+            SharedTimerSync.publishRunning(
+                title: isBreakTime ? "Break" : "Progressive",
+                timeRemaining: time,
+                phaseDuration: selectedTime,
+                isBreak: isBreakTime
+            )
         }
     }
     

@@ -44,12 +44,13 @@ struct TomaTaskLiveActivity: Widget {
 
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 6) {
-                        Link(destination: URL(string: context.state.isPaused ? "tomatask://play" : "tomatask://pause")!) {
+                        Button(intent: ToggleFocusTimerIntent()) {
                             Image(systemName: context.state.isPaused ? "play.circle.fill" : "pause.circle.fill")
                                 .font(.system(size: 36))
                                 .symbolRenderingMode(.hierarchical)
                                 .foregroundStyle(.white.opacity(0.9))
                         }
+                        .buttonStyle(.plain)
                         .accessibilityLabel(context.state.isPaused ? "Play" : "Pause")
 
                         Spacer(minLength: 4)
@@ -165,12 +166,13 @@ private struct LockScreenLiveActivityView: View {
                 Spacer(minLength: 8)
 
                 VStack(alignment: .trailing, spacing: 6) {
-                    Link(destination: URL(string: context.state.isPaused ? "tomatask://play" : "tomatask://pause")!) {
+                    Button(intent: ToggleFocusTimerIntent()) {
                         Image(systemName: context.state.isPaused ? "play.circle.fill" : "pause.circle.fill")
                             .font(.system(size: 36))
                             .foregroundStyle(.white.opacity(0.9))
                             .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(context.state.isPaused ? "Play" : "Pause")
 
                     Spacer(minLength: 8)

@@ -104,6 +104,12 @@ final class SessionTimerEngine {
             timeRemaining: time,
             isBreak: isBreak
         )
+        SharedTimerSync.publishRunning(
+            title: displayTitle,
+            timeRemaining: time,
+            phaseDuration: phaseTotal,
+            isBreak: isBreak
+        )
         
         let alarmTitle = taskTitle.isEmpty
             ? (isBreak ? "Break complete" : "Focus complete")
@@ -137,6 +143,12 @@ final class SessionTimerEngine {
         timer = nil
         SessionAlarmScheduler.pause()
         LiveActivityManager.update(timeRemaining: time, isBreak: isBreak, isPaused: true)
+        SharedTimerSync.publishPaused(
+            title: displayTitle,
+            timeRemaining: time,
+            phaseDuration: phaseTotal,
+            isBreak: isBreak
+        )
     }
     
     func stop() {
@@ -144,6 +156,7 @@ final class SessionTimerEngine {
         AlarmPlayer.shared.stop()
         SessionAlarmScheduler.cancel()
         LiveActivityManager.endAll()
+        SharedTimerSync.publishIdle(title: displayTitle, phaseDuration: maxDuration)
         
         isRunning = false
         isBreak = false
@@ -224,6 +237,7 @@ final class SessionTimerEngine {
         endBackgroundTask()
         SessionAlarmScheduler.cancel()
         LiveActivityManager.endAll()
+        SharedTimerSync.publishIdle(title: displayTitle, phaseDuration: maxDuration)
     }
     
     // MARK: - Private

@@ -17,6 +17,14 @@ struct TabBarViewController: View {
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
     @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew: Bool = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @State private var selectedTab: AppTab = .progressive
+    
+    private enum AppTab: Hashable {
+        case statistics
+        case progressive
+        case classic
+        case settings
+    }
     
     private var isSubscribed: Bool {
         !store.purchasedSubscriptions.isEmpty
@@ -31,14 +39,14 @@ struct TabBarViewController: View {
     
     var body: some View {
         VStack {
-            TabView {
-                Tab("Statistics", systemImage: "chart.bar.fill") {
+            TabView(selection: $selectedTab) {
+                Tab("Statistics", systemImage: "chart.bar.fill", value: .statistics) {
                     NavigationStack {
                         StatisticsView()
                     }
                 }
                 
-                Tab("Progressive", systemImage: "dial.medium") {
+                Tab("Progressive", systemImage: "dial.medium", value: .progressive) {
                     NavigationStack {
                         if isSubscribed {
                             ProgressiveTimerView()
@@ -48,13 +56,13 @@ struct TabBarViewController: View {
                     }
                 }
                 
-                Tab("Classic", systemImage: "timer") {
+                Tab("Classic", systemImage: "timer", value: .classic) {
                     NavigationStack {
                         TomaTasksList()
                     }
                 }
                 
-                Tab("Settings", systemImage: "gear") {
+                Tab("Settings", systemImage: "gear", value: .settings) {
                     NavigationStack {
                         SettingsView(appIcon: $appIcon)
                     }
@@ -66,6 +74,14 @@ struct TabBarViewController: View {
             // Existing users who already saw WhatsNew skip first-launch onboarding.
             if hasSeenWhatsNew && !hasCompletedOnboarding {
                 hasCompletedOnboarding = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
+            guard let path = notification.userInfo?["path"] as? String else { return }
+            guard WidgetDeepLink.shouldOpenTimer(path: path) else { return }
+            selectedTab = .progressive
+            if WidgetDeepLink.shouldStartTimer(path: path) {
+                WidgetDeepLink.pendingPlay = true
             }
         }
         .fullScreenCover(isPresented: showOnboarding) {

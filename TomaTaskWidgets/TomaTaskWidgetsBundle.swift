@@ -9,6 +9,7 @@ import SwiftUI
 @main
 struct TomaTaskWidgetsBundle: WidgetBundle {
     var body: some Widget {
+        TomaTaskTimerWidget()
         TomaTaskLiveActivity()
         TomaTaskAlarmLiveActivity()
     }

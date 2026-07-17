@@ -153,6 +153,11 @@ struct TaskView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             engine.handleBecomeActive()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .focusSessionRemoteToggle)) { _ in
+            guard engine.isRunning else { return }
+            FocusSessionRemote.markHandled()
+            engine.togglePlayPause()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
             guard let path = notification.userInfo?["path"] as? String else { return }
             switch path {

@@ -81,6 +81,10 @@
 		AA1111112DB5700100LIVE11 /* Exceptions for "TomaTask" folder in "TomaTaskWidgets" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Helpers/FocusSessionRemote.swift,
+				Helpers/OpenAlarmAppIntent.swift,
+				Helpers/SharedTimerStore.swift,
+				Helpers/ToggleFocusTimerIntent.swift,
 				Helpers/TomaTaskAlarmMetadata.swift,
 				LiveActivity/TomaTaskActivityAttributes.swift,
 			);
@@ -610,6 +614,7 @@
 		AA1111112DB5700100LIVE12 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TomaTaskWidgets/TomaTaskWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -636,6 +641,7 @@
 		AA1111112DB5700100LIVE13 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TomaTaskWidgets/TomaTaskWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;

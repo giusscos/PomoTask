@@ -12,7 +12,7 @@ enum SessionAlarmScheduler {
     private static var activeAlarmID: UUID?
 
     static var hasActiveAlarm: Bool {
-        activeAlarmID != nil
+        activeAlarmID != nil || SharedTimerStore.alarmID != nil
     }
 
     static var usesAlarmKit: Bool {
@@ -130,6 +130,7 @@ enum SessionAlarmScheduler {
                 )
             )
             activeAlarmID = id
+            SharedTimerStore.alarmID = id
         } catch {
             print("Failed to schedule AlarmKit timer: \(error.localizedDescription)")
         }
@@ -138,28 +139,31 @@ enum SessionAlarmScheduler {
     /// Pause the system countdown without dismissing it (Clock-style).
     static func pause() {
         guard #available(iOS 26.0, *) else { return }
-        guard let id = activeAlarmID else { return }
+        guard let id = activeAlarmID ?? SharedTimerStore.alarmID else { return }
         try? AlarmManager.shared.pause(id: id)
     }
 
     /// Resume a paused system countdown.
     static func resume() {
         guard #available(iOS 26.0, *) else { return }
-        guard let id = activeAlarmID else { return }
+        guard let id = activeAlarmID ?? SharedTimerStore.alarmID else { return }
         try? AlarmManager.shared.resume(id: id)
     }
 
     /// User stopped / reset the timer — cancel so it never alerts.
     static func cancel() {
         guard #available(iOS 26.0, *) else { return }
-        guard let id = activeAlarmID else { return }
+        let id = activeAlarmID ?? SharedTimerStore.alarmID
+        guard let id else { return }
 
         try? AlarmManager.shared.cancel(id: id)
         activeAlarmID = nil
+        SharedTimerStore.alarmID = nil
     }
 
     /// Session reached zero in-app. Do **not** cancel — AlarmKit must be allowed to alert.
     static func clearTrackingOnly() {
         activeAlarmID = nil
+        SharedTimerStore.alarmID = nil
     }
 }
