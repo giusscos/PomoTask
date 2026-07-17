@@ -3,47 +3,75 @@ import SwiftUI
 import Charts
 
 struct StatisticsView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(Store.self) private var store
     @Query private var statistics: [Statistics]
-    
-    @State private var selectedTimeRange: TimeRange = .week
-    @State private var selectedDate = Date()
+
+    @State private var displayedMonth = Date()
+    @State private var selectedDay: Date?
     @State private var showingPaywall = false
-    
-    enum TimeRange: String, CaseIterable {
-        case day = "Day"
-        case week = "Week"
-        case month = "Month"
-    }
-    
-    var isSubscribed: Bool {
+
+    private let calendar = Calendar.current
+
+    private var isSubscribed: Bool {
         !store.purchasedSubscriptions.isEmpty
     }
-    
-    var filteredStatistics: [Statistics] {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        switch selectedTimeRange {
-        case .day:
-            let startOfDay = calendar.startOfDay(for: now)
-            return statistics.filter { stat in
-                calendar.isDate(stat.date, inSameDayAs: startOfDay)
-            }
-        case .week:
-            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-            return statistics.filter { stat in
-                stat.date >= startOfWeek && stat.date <= now
-            }
-        case .month:
-            let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
-            return statistics.filter { stat in
-                stat.date >= startOfMonth && stat.date <= now
-            }
+
+    private var focusByDay: [Date: TimeInterval] {
+        StatisticsAggregator.dailyFocusMap(from: statistics)
+    }
+
+    private var dayTotals: [Date: StatisticsAggregator.DayTotal] {
+        StatisticsAggregator.dailyTotals(from: statistics)
+    }
+
+    private var weekFocusSeconds: TimeInterval {
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        return focusByDay
+            .filter { $0.key >= startOfWeek }
+            .reduce(0) { $0 + $1.value }
+    }
+
+    private var monthFocusSeconds: TimeInterval {
+        guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start,
+              let monthEnd = calendar.dateInterval(of: .month, for: displayedMonth)?.end
+        else { return 0 }
+        return focusByDay
+            .filter { $0.key >= monthStart && $0.key < monthEnd }
+            .reduce(0) { $0 + $1.value }
+    }
+
+    private var currentStreak: Int {
+        StatisticsAggregator.currentStreak(focusByDay: focusByDay)
+    }
+
+    private var longestStreak: Int {
+        StatisticsAggregator.longestStreak(focusByDay: focusByDay)
+    }
+
+    private var activeDaysInDisplayedMonth: Int {
+        guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start,
+              let monthEnd = calendar.dateInterval(of: .month, for: displayedMonth)?.end
+        else { return 0 }
+        return focusByDay.filter { $0.key >= monthStart && $0.key < monthEnd && $0.value > 0 }.count
+    }
+
+    private var bestDayInDisplayedMonth: (date: Date, seconds: TimeInterval)? {
+        guard let monthStart = calendar.dateInterval(of: .month, for: displayedMonth)?.start,
+              let monthEnd = calendar.dateInterval(of: .month, for: displayedMonth)?.end
+        else { return nil }
+        let monthMap = focusByDay.filter { $0.key >= monthStart && $0.key < monthEnd }
+        return StatisticsAggregator.bestDay(in: monthMap)
+    }
+
+    private var weekChartData: [(date: Date, minutes: Double)] {
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        return (0..<7).compactMap { offset -> (Date, Double)? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: startOfWeek) else { return nil }
+            let start = calendar.startOfDay(for: day)
+            return (start, (focusByDay[start] ?? 0) / 60)
         }
     }
-    
+
     var body: some View {
         Group {
             if isSubscribed {
@@ -53,86 +81,148 @@ struct StatisticsView: View {
             }
         }
         .navigationTitle("Statistics")
-    }
-    
-    private var statisticsContent: some View {
-        List {
-            Section {
-                Picker("Time Range", selection: $selectedTimeRange) {
-                    ForEach(TimeRange.allCases, id: \.self) { range in
-                        Text(range.rawValue).tag(range)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.vertical)
+        .sheet(isPresented: Binding(
+            get: { selectedDay != nil },
+            set: { if !$0 { selectedDay = nil } }
+        )) {
+            if let selectedDay {
+                DayFocusDetailSheet(
+                    date: selectedDay,
+                    total: dayTotals[calendar.startOfDay(for: selectedDay)]
+                )
             }
-            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowBackground(Color.clear)
-            
-            Section {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Focus Time")
-                        .font(.headline)
-                    
-                    if filteredStatistics.isEmpty {
-                        Text("No data available for the selected time range")
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding()
-                    } else {
-                        StatisticsChartView(
-                            statistics: filteredStatistics,
-                            timeRange: selectedTimeRange
-                        )
-                    }
-                }
-                .padding(.vertical)
-            }
-            
-            Section {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 100)), count: 2)) {
-                    StatCard(
-                        title: "Timers Started",
-                        value: "\(filteredStatistics.reduce(0) { $0 + $1.timersStarted })",
-                        icon: "play.circle.fill",
-                        color: .blue
-                    )
-                    
-                    StatCard(
-                        title: "Timers Completed",
-                        value: "\(filteredStatistics.reduce(0) { $0 + $1.timersCompleted })",
-                        icon: "checkmark.circle.fill",
-                        color: .green
-                    )
-                    
-                    StatCard(
-                        title: "Total Focus Time",
-                        value: formatTime(filteredStatistics.reduce(0) { $0 + $1.totalFocusTime }),
-                        icon: "clock.fill",
-                        color: .purple
-                    )
-                }
-            }
-            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowBackground(Color.clear)
         }
     }
-    
+
+    private var statisticsContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                headline
+
+                TomatoSplashCalendarView(
+                    focusByDay: focusByDay,
+                    displayedMonth: $displayedMonth,
+                    selectedDay: $selectedDay
+                )
+
+                metricGrid
+
+                weekChartSection
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private var headline: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("\(StatisticsAggregator.formatFocusTime(weekFocusSeconds)) this week")
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+
+            HStack(spacing: 10) {
+                Label("\(currentStreak)-day streak", systemImage: "flame.fill")
+                    .foregroundStyle(StatisticsAggregator.splashDeep)
+
+                Text("·")
+                    .foregroundStyle(.secondary)
+
+                Text("Best run \(longestStreak)")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline.weight(.semibold))
+            .fontDesign(.rounded)
+        }
+        .padding(.top, 8)
+    }
+
+    private var metricGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            StatCard(
+                title: "Active days",
+                value: "\(activeDaysInDisplayedMonth)",
+                icon: "calendar",
+                color: StatisticsAggregator.splashCoral
+            )
+            StatCard(
+                title: "Month focus",
+                value: StatisticsAggregator.formatFocusTime(monthFocusSeconds),
+                icon: "clock.fill",
+                color: StatisticsAggregator.splashDeep
+            )
+            StatCard(
+                title: "Best day",
+                value: bestDayValue,
+                icon: "star.fill",
+                color: .orange
+            )
+            StatCard(
+                title: "Longest streak",
+                value: "\(longestStreak)",
+                icon: "flame.fill",
+                color: StatisticsAggregator.splashDeep
+            )
+        }
+    }
+
+    private var bestDayValue: String {
+        guard let best = bestDayInDisplayedMonth else { return "—" }
+        return StatisticsAggregator.formatFocusTime(best.seconds)
+    }
+
+    private var weekChartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("This week")
+                .font(.headline.weight(.semibold))
+                .fontDesign(.rounded)
+
+            Chart {
+                ForEach(weekChartData, id: \.date) { item in
+                    BarMark(
+                        x: .value("Day", item.date, unit: .day),
+                        y: .value("Minutes", item.minutes)
+                    )
+                    .foregroundStyle(StatisticsAggregator.splashDeep.gradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
+            .frame(height: 160)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day)) { _ in
+                    AxisValueLabel(format: .dateTime.weekday(.narrow))
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 3))
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemBackground))
+        )
+    }
+
     private var paywallContent: some View {
         VStack(spacing: 20) {
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 60, weight: .semibold))
-                .foregroundStyle(OnboardingStyle.tomatoRed)
-            
-            Text("Focus statistics")
+            ZStack {
+                TomatoSplashShape(seed: 42)
+                    .fill(StatisticsAggregator.splashDeep.opacity(0.9))
+                    .frame(width: 88, height: 88)
+                Image(systemName: "calendar")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+
+            Text("Tomato splash calendar")
                 .font(.title.weight(.bold))
                 .fontDesign(.rounded)
-            
-            Text("Track focus time, starts, and completions. Unlock with Progressive Pro.")
+
+            Text("See every focus day as a tomato hit — streaks, heat, and a stage full of smashed tomatoes. Unlock with Progressive Pro.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
-            
+
             Button {
                 showingPaywall = true
             } label: {
@@ -152,116 +242,6 @@ struct StatisticsView: View {
             SubscriptionStoreContentView()
         }
     }
-    
-    private func formatTime(_ timeInterval: TimeInterval) -> String {
-        let hours = Int(timeInterval) / 3600
-        let minutes = Int(timeInterval) / 60 % 60
-        
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
-    }
-}
-
-struct StatisticsChartView: View {
-    let statistics: [Statistics]
-    let timeRange: StatisticsView.TimeRange
-    
-    private var aggregatedStatistics: [Statistics] {
-        let calendar = Calendar.current
-        
-        switch timeRange {
-        case .day:
-            return statistics
-        case .week, .month:
-            // Group statistics by day
-            let groupedStats = Dictionary(grouping: statistics) { stat in
-                calendar.startOfDay(for: stat.date)
-            }
-            
-            // Aggregate statistics for each day
-            return groupedStats.map { (date, stats) in
-                let aggregated = Statistics(date: date)
-                aggregated.timersStarted = stats.reduce(0) { $0 + $1.timersStarted }
-                aggregated.timersCompleted = stats.reduce(0) { $0 + $1.timersCompleted }
-                aggregated.totalFocusTime = stats.reduce(0) { $0 + $1.totalFocusTime }
-                return aggregated
-            }.sorted { $0.date < $1.date }
-        }
-    }
-    
-    var body: some View {
-        Chart {
-            ForEach(aggregatedStatistics) { stat in
-                BarMark(
-                    x: .value("Date", stat.date, unit: timeRange == .day ? .hour : .day),
-                    y: .value("Focus Time", stat.totalFocusTime / 60)
-                )
-                .foregroundStyle(Color.accentColor.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
-        .frame(height: 200)
-        .chartXScale(domain: getXAxisDomain())
-        .chartXAxis {
-            AxisMarks(values: getXAxisValues()) { value in
-                AxisGridLine()
-                AxisValueLabel(format: getXAxisLabelFormat())
-            }
-        }
-        .chartYAxis {
-            AxisMarks { value in
-                AxisGridLine()
-                AxisValueLabel("\(value.index * 5) min")
-            }
-        }
-    }
-    
-    private func getXAxisDomain() -> ClosedRange<Date> {
-        let calendar = Calendar.current
-        let now = Date()
-        
-        switch timeRange {
-        case .day:
-            let startOfDay = calendar.startOfDay(for: now)
-            let endOfDay = calendar.date(byAdding: .hour, value: 24, to: startOfDay)!
-            return startOfDay...endOfDay
-            
-        case .week:
-            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-            let endOfWeek = calendar.date(byAdding: .day, value: 7, to: startOfWeek)!
-            return startOfWeek...endOfWeek
-            
-        case .month:
-            let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
-            let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth)!
-            return startOfMonth...endOfMonth
-        }
-    }
-    
-    private func getXAxisValues() -> AxisMarkValues {
-        switch timeRange {
-        case .day:
-            return .stride(by: .hour, count: 6)
-        case .week:
-            return .stride(by: .day, count: 1)
-        case .month:
-            return .stride(by: .day, count: 7)
-        }
-    }
-    
-    private func getXAxisLabelFormat() -> Date.FormatStyle {
-        switch timeRange {
-        case .day:
-            return .dateTime.hour()
-        case .week:
-            return .dateTime.weekday(.abbreviated)
-        case .month:
-            return .dateTime.day()
-        }
-    }
 }
 
 struct StatCard: View {
@@ -269,25 +249,27 @@ struct StatCard: View {
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .foregroundColor(color)
+                    .foregroundStyle(color)
                 Text(title)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
-            
+
             Text(value)
-                .font(.title2)
-                .bold()
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -296,4 +278,4 @@ struct StatCard: View {
         StatisticsView()
             .environment(Store())
     }
-} 
+}
