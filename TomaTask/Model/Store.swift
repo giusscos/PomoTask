@@ -18,7 +18,8 @@ class Store {
     private var subscriptions: [Product] = []
     var purchasedSubscriptions: [Product] = []
     private var subscriptionGroupStatus: RenewalState?
-    
+    var isLoading: Bool = true
+
     private let productIds: [String] = ["pt_499_1m_7d0", "pt_4999_1y_7d0"]
     
     let groupId: String = "21571698"
@@ -29,15 +30,14 @@ class Store {
         //start a transaction listern as close to app launch as possible so you don't miss a transaction
         updateListenerTask = listenForTransactions()
         
-        Task {
-            await requestProducts()
-            await updateCustomerProductStatus()
-            
-            // Set up a timer to periodically check subscription status
-            Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-                Task {
-                    await self?.updateCustomerProductStatus()
-                }
+        Task { [weak self] in
+            await self?.requestProducts()
+            await self?.updateCustomerProductStatus()
+            await MainActor.run { [self] in self?.isLoading = false }
+
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                await self?.updateCustomerProductStatus()
             }
         }
     }
@@ -112,9 +112,11 @@ class Store {
     
     @MainActor
     func updateCustomerProductStatus() async {
-        // Clear existing subscriptions before checking
-        purchasedSubscriptions.removeAll()
-        
+        // Build the next list first, then assign once. Clearing `purchasedSubscriptions`
+        // mid-refresh briefly makes `isSubscribed` false and remounts ProgressiveTimerView
+        // (locked paywall flash + dial animating from 0 every ~60s poll).
+        var nextPurchased: [Product] = []
+
         for await result in Transaction.currentEntitlements {
             do {
                 //Check whether the transaction is verified. If it isn't, catch `failedVerification` error.
@@ -123,7 +125,7 @@ class Store {
                 switch transaction.productType {
                 case .autoRenewable:
                     if let subscription = subscriptions.first(where: {$0.id == transaction.productID}) {
-                        purchasedSubscriptions.append(subscription)
+                        nextPurchased.append(subscription)
                     }
                 default:
                     break
@@ -134,21 +136,11 @@ class Store {
                 print("failed updating products")
             }
         }
-        
-        // Also check for any active subscriptions
-        for await result in Transaction.all {
-            do {
-                let transaction = try checkVerified(result)
-                if transaction.productType == .autoRenewable {
-                    if let subscription = subscriptions.first(where: {$0.id == transaction.productID}) {
-                        if !purchasedSubscriptions.contains(where: {$0.id == subscription.id}) {
-                            purchasedSubscriptions.append(subscription)
-                        }
-                    }
-                }
-            } catch {
-                print("failed checking all transactions")
-            }
+
+        let nextIDs = nextPurchased.map(\.id)
+        let currentIDs = purchasedSubscriptions.map(\.id)
+        if nextIDs != currentIDs {
+            purchasedSubscriptions = nextPurchased
         }
     }
 }

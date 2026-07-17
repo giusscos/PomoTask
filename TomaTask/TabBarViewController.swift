@@ -91,6 +91,15 @@ struct TabBarViewController: View {
         .fullScreenCover(isPresented: .constant(hasCompletedOnboarding && !hasSeenWhatsNew)) {
             WhatsNewView()
         }
+        .overlay {
+            if store.isLoading {
+                ZStack {
+                    Color(uiColor: .systemBackground)
+                        .ignoresSafeArea()
+                    ProgressView()
+                }
+            }
+        }
     }
 }
 

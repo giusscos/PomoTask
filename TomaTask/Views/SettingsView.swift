@@ -15,75 +15,127 @@ struct SettingsView: View {
 
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage(SessionAlertStorage.notificationEnabled) private var notificationEnabled = true
-    
+
+    private var isSubscribed: Bool {
+        !store.purchasedSubscriptions.isEmpty
+    }
+
     var body: some View {
-        List {
-            Section() {
-                RoundedRectangle(cornerRadius: 48)
-                    .foregroundStyle(OnboardingStyle.tomatoRed)
-                    .frame(maxWidth: .infinity, maxHeight: 200, alignment: .top)
-                    .aspectRatio(16/9, contentMode: .fill)
-                    .overlay {
-                        VStack {
-                            Text("Unlock Progressive")
-                                .foregroundStyle(.white)
-                                .font(.largeTitle.weight(.bold))
-                                .fontDesign(.rounded)
-                            
-                            Text("Adaptive focus, check-ins, stats, and themes")
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(.white.opacity(0.9))
-                                .font(.subheadline.weight(.semibold))
-                                .fontDesign(.rounded)
-                            
-                            Button {
-                                if store.purchasedSubscriptions.isEmpty {
-                                    UIApplication.shared.setAlternateIconName(defaultAppIcon)
-                                    showSheet.toggle()
-                                } else {
-                                    showManageSheet.toggle()
-                                }
-                            } label: {
-                                Label(!store.purchasedSubscriptions.isEmpty ? "Manage subscription" : "Subscribe", systemImage: !store.purchasedSubscriptions.isEmpty ? "pencil" : "lock.fill")
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(OnboardingStyle.tomatoRed)
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 8)
-                                    .background(.white)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    .shadow(radius: 10, x: 0, y: 4)
-                            }
-                            .padding(.vertical)
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                promoCard
+                appIconCard
+                sessionAlertsSection
+                supportSection
             }
-            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            
-            Section {
-                NavigationLink {
-                    AppIconSelectionView(selectedIcon: $appIcon, store: store)
-                } label: {
-                    HStack {
-                        Text("App Icon")
+            .padding(.horizontal)
+            .padding(.bottom, 24)
+        }
+        .navigationTitle("Settings")
+        .tint(OnboardingStyle.tomatoRed)
+        .sheet(isPresented: $showSheet) {
+            SubscriptionStoreContentView()
+        }
+        .manageSubscriptionsSheet(isPresented: $showManageSheet)
+    }
 
-                        Image(appIcon)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 30, height: 30)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
+    // MARK: - Promo
+
+    private var promoCard: some View {
+        VStack(spacing: 14) {
+            Text(isSubscribed ? "Progressive Pro" : "Unlock Progressive")
+                .font(.title.weight(.bold))
+                .fontDesign(.rounded)
+                .foregroundStyle(.white)
+
+            Text(
+                isSubscribed
+                    ? "Adaptive focus, check-ins, stats, and themes are yours."
+                    : "Adaptive focus, check-ins, stats, and themes"
+            )
+            .multilineTextAlignment(.center)
+            .font(.subheadline.weight(.semibold))
+            .fontDesign(.rounded)
+            .foregroundStyle(.white.opacity(0.9))
+
+            Button {
+                if isSubscribed {
+                    showManageSheet.toggle()
+                } else {
+                    UIApplication.shared.setAlternateIconName(defaultAppIcon)
+                    showSheet.toggle()
                 }
+            } label: {
+                Label(
+                    isSubscribed ? "Manage subscription" : "Subscribe",
+                    systemImage: isSubscribed ? "pencil" : "lock.fill"
+                )
+                .font(.headline.weight(.bold))
+                .fontDesign(.rounded)
+                .foregroundStyle(OnboardingStyle.tomatoRed)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(.white)
+                .clipShape(Capsule())
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
             }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(OnboardingStyle.tomatoRed)
+        )
+        .padding(.top, 8)
+    }
 
-            Section {
+    // MARK: - App Icon
+
+    private var appIconCard: some View {
+        NavigationLink {
+            AppIconSelectionView(selectedIcon: $appIcon, store: store)
+        } label: {
+            HStack(spacing: 14) {
+                Image(appIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                Text("App Icon")
+                    .font(.body.weight(.semibold))
+                    .fontDesign(.rounded)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .settingsCardChrome()
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Session Alerts
+
+    private var sessionAlertsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Session Alerts")
+                .font(.headline.weight(.semibold))
+                .fontDesign(.rounded)
+
+            VStack(spacing: 0) {
                 Toggle(isOn: $alarmEnabled) {
                     Label("Alarm", systemImage: "bell.and.waves.left.and.right")
+                        .font(.body.weight(.medium))
+                        .fontDesign(.rounded)
                 }
+                .padding(16)
                 .onChange(of: alarmEnabled) { _, isEnabled in
                     if isEnabled {
                         Task {
@@ -102,9 +154,15 @@ struct SettingsView: View {
                     }
                 }
 
+                Divider()
+                    .padding(.leading, 16)
+
                 Toggle(isOn: $notificationEnabled) {
                     Label("Session notification", systemImage: "app.badge")
+                        .font(.body.weight(.medium))
+                        .fontDesign(.rounded)
                 }
+                .padding(16)
                 .onChange(of: notificationEnabled) { _, isEnabled in
                     if isEnabled {
                         SessionCompletionAlert.requestNotificationPermissionIfNeeded()
@@ -112,46 +170,92 @@ struct SettingsView: View {
                         SessionCompletionAlert.cancelPending()
                     }
                 }
-            } header: {
-                Text("Session Alerts")
-            } footer: {
-                Text("Alarm uses AlarmKit for a Clock-style alert that breaks through Silent mode and Focus. Turn on Alarm in Settings and allow Alarms & Timers when prompted. Session notifications are optional banners and are skipped while AlarmKit is active.")
             }
-            
-            Section {
-                if !store.purchasedSubscriptions.isEmpty {
-                    Link("Request a feature", destination: URL(string: "mailto:hello@giusscos.com")!)
-                        .font(.headline)
-                        .foregroundColor(.blue)
-                    
-                    Button {
-                        showSheet.toggle()
-                    } label: {
-                        Text("Request a refund")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                    }
-                }
-                
-                Link("Terms of use", destination: LegalURLs.termsOfUse)
-                    .font(.headline)
-                    .foregroundColor(.blue)
-                
-                Link("Privacy Policy", destination: LegalURLs.privacyPolicy)
-                    .font(.headline)
-                    .foregroundColor(.blue)
-            } header: {
-                Text("Support")
-            }
+            .settingsCardChrome()
+
+            Text("Alarm uses AlarmKit for a Clock-style alert that breaks through Silent mode and Focus. Turn on Alarm in Settings and allow Alarms & Timers when prompted. Session notifications are optional banners and are skipped while AlarmKit is active.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fontDesign(.rounded)
         }
-        .sheet(isPresented: $showSheet, content: {
-            SubscriptionStoreContentView()
-        })
-        .manageSubscriptionsSheet(isPresented: $showManageSheet)
+    }
+
+    // MARK: - Support
+
+    private var supportSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Support")
+                .font(.headline.weight(.semibold))
+                .fontDesign(.rounded)
+
+            VStack(spacing: 0) {
+                if isSubscribed {
+                    supportLink(title: "Request a feature", url: URL(string: "mailto:hello@giusscos.com")!)
+                    settingsDivider
+                }
+
+                supportLink(title: "Terms of use", url: LegalURLs.termsOfUse)
+                settingsDivider
+                supportLink(title: "Privacy Policy", url: LegalURLs.privacyPolicy)
+            }
+            .settingsCardChrome()
+        }
+    }
+
+    private var settingsDivider: some View {
+        Divider()
+            .padding(.leading, 16)
+    }
+
+    private func supportLink(title: String, url: URL) -> some View {
+        Link(destination: url) {
+            supportRow(title: title)
+        }
+    }
+
+    private func supportButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            supportRow(title: title)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func supportRow(title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .fontDesign(.rounded)
+                .foregroundStyle(OnboardingStyle.tomatoRed)
+
+            Spacer()
+
+            Image(systemName: "arrow.up.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(OnboardingStyle.tomatoRed.opacity(0.55))
+        }
+        .padding(16)
+        .contentShape(Rectangle())
+    }
+}
+
+private extension View {
+    func settingsCardChrome() -> some View {
+        self
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(StatisticsAggregator.stageFloor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(StatisticsAggregator.splashDeep.opacity(0.08), lineWidth: 1)
+            )
     }
 }
 
 #Preview {
-    SettingsView(appIcon: .constant("AppIcon"))
-        .environment(Store())
+    NavigationStack {
+        SettingsView(appIcon: .constant("AppIcon"))
+            .environment(Store())
+    }
 }

@@ -12,15 +12,18 @@ struct SubscriptionStoreContentView: View {
     @Environment(Store.self) private var store
     
     var body: some View {
-        SubscriptionStoreView(groupID: store.groupId) {
-            PaywallMarketingContent()
-                .background(OnboardingStyle.tomatoRed)
+        VStack(spacing: 0) {
+            SubscriptionStoreView(groupID: store.groupId) {
+                PaywallMarketingContent()
+                    .background(OnboardingStyle.tomatoRed)
+            }
+            .scrollIndicators(.hidden)
+            .subscriptionStoreControlStyle(.pagedPicker, placement: .bottomBar)
+            .subscriptionStoreButtonLabel(.multiline)
+            .storeButton(.visible, for: .restorePurchases)
+            .tint(.white)
         }
         .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
-        .subscriptionStoreControlStyle(.compactPicker, placement: .bottomBar)
-        .subscriptionStoreButtonLabel(.multiline)
-        .storeButton(.visible, for: .restorePurchases)
-        .tint(.white)
     }
 }
 

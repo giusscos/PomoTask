@@ -24,7 +24,19 @@ struct TomaTasksList: View {
     var body: some View {
         Group {
             if tomaTasks.isEmpty {
-                emptyStateView
+                ContentUnavailableView {
+                    Label("No Timers Yet", systemImage: "timer")
+                } description: {
+                    Text("Create a timer to start a focused work session with the Pomodoro technique.")
+                } actions: {
+                    Button(action: addTask) {
+                        Label("Create Your First Timer", systemImage: "plus")
+                            .font(.headline)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             } else {
                 List {
                     ForEach(tomaTasks) { task in
@@ -53,6 +65,7 @@ struct TomaTasksList: View {
             }
         }
         .navigationTitle("Timers")
+        .tint(OnboardingStyle.tomatoRed)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: addTask) {
@@ -64,40 +77,6 @@ struct TomaTasksList: View {
             EditTask(task: config.task, isNew: config.isNew)
                 .id(config.task.persistentModelID)
         }
-
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "timer")
-                .font(.system(size: 64))
-                .foregroundStyle(.tertiary)
-            
-            VStack(spacing: 8) {
-                Text("No Timers Yet")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text("Create a timer to start a focused work session with the Pomodoro technique.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
-            
-            Button(action: addTask) {
-                Label("Create Your First Timer", systemImage: "plus")
-                    .font(.headline)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.accentColor)
-                    .foregroundStyle(.white)
-                    .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
     }
     
     private func addTask() {

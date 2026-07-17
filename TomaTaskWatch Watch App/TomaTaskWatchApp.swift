@@ -14,6 +14,8 @@ struct TomaTaskWatch_Watch_AppApp: App {
     @State private var store = Store()
     
     init() {
+        WatchSessionManager.shared.activate()
+        WatchSessionNotifier.requestPermissionIfNeeded()
         do {
             container = try ModelContainer(for: TomaTask.self, Statistics.self)
         } catch {

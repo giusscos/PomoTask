@@ -72,6 +72,9 @@
 		68CD84812DB5632300C5BBA7 /* Exceptions for "TomaTask" folder in "TomaTaskWatch Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Helpers/SharedTimerStore.swift,
+				Helpers/SharedTimerSync.swift,
+				Helpers/WatchSessionManager.swift,
 				Model/Statistics.swift,
 				Model/Store.swift,
 				Model/TomaTask.swift,
@@ -97,6 +100,13 @@
 			);
 			target = AA1111112DB5700100LIVE06 /* TomaTaskWidgets */;
 		};
+		AA1111112DB5700100WATCH1 /* Exceptions for "TomaTaskWatch Watch App" folder in "TomaTaskWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 68CD846D2DB5626800C5BBA7 /* TomaTaskWatch Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -112,6 +122,9 @@
 		};
 		68CD846F2DB5626800C5BBA7 /* TomaTaskWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA1111112DB5700100WATCH1 /* Exceptions for "TomaTaskWatch Watch App" folder in "TomaTaskWatch Watch App" target */,
+			);
 			path = "TomaTaskWatch Watch App";
 			sourceTree = "<group>";
 		};
@@ -563,7 +576,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = TomaTaskWatch;
+				INFOPLIST_FILE = "TomaTaskWatch Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "PomoTask Watch";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = giusscos.TomaTask;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -592,7 +606,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = TomaTaskWatch;
+				INFOPLIST_FILE = "TomaTaskWatch Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "PomoTask Watch";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = giusscos.TomaTask;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -44,20 +44,22 @@ struct TomatoAssaultOverlay: UIViewRepresentable {
         uiView.onFinished = onFinished
 
         let bounds = uiView.bounds
-        guard bounds.width > 1, bounds.height > 1, !targets.isEmpty else { return }
+        guard bounds.width > 1, bounds.height > 1 else { return }
 
-        let signature = targets
-            .map { "\(Int($0.date.timeIntervalSinceReferenceDate))-\(Int($0.focusSeconds))-\(Int($0.frame.midX))-\(Int($0.frame.midY))" }
-            .sorted()
-            .joined(separator: "|") + "|\(animationToken)|\(Int(bounds.width))x\(Int(bounds.height))"
+        // Only (re)play when the calendar intentionally bumps `animationToken`
+        // (appear / month change). Frame and bounds jitter from scrolling must
+        // not restart the throw sequence.
+        guard animationToken != context.coordinator.lastPlayedToken else { return }
 
-        guard signature != context.coordinator.lastSignature else { return }
-        context.coordinator.lastSignature = signature
+        let validTargets = targets.filter { $0.focusSeconds > 0 && $0.frame.width > 1 }
+        guard !validTargets.isEmpty else { return }
+
+        context.coordinator.lastPlayedToken = animationToken
 
         DispatchQueue.main.async {
             guard uiView.bounds.width > 1 else { return }
             uiView.play(
-                targets: targets,
+                targets: validTargets,
                 stageBounds: uiView.bounds,
                 pileHeight: pileHeight
             )
@@ -65,7 +67,7 @@ struct TomatoAssaultOverlay: UIViewRepresentable {
     }
 
     final class Coordinator {
-        var lastSignature: String = ""
+        var lastPlayedToken: Int = -1
     }
 }
 

@@ -21,7 +21,6 @@ struct OnboardingPaywallView: View {
             .scrollIndicators(.hidden)
             .subscriptionStoreControlStyle(.pagedPicker, placement: .bottomBar)
             .subscriptionStoreButtonLabel(.multiline)
-            .subscriptionStoreControlBackground(.clear)
             .storeButton(.visible, for: .restorePurchases)
             .tint(.white)
         }

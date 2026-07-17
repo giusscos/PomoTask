@@ -266,6 +266,9 @@ struct ProgressiveTimerView: View {
         .onReceive(NotificationCenter.default.publisher(for: .focusSessionRemoteToggle)) { _ in
             handleRemoteToggleIfNeeded()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .watchCompanionSnapshotDidUpdate)) { _ in
+            adoptCompanionSnapshotIfNeeded()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
             guard let path = notification.userInfo?["path"] as? String else { return }
             switch path {
@@ -361,12 +364,51 @@ struct ProgressiveTimerView: View {
             SharedTimerSync.publishIdle(phaseDuration: selectedTime)
             return
         }
+        applySnapshot(snapshot, republish: false)
+    }
+
+    /// Adopts Watch / App Group Progressive state without echoing back over WatchConnectivity.
+    private func adoptCompanionSnapshotIfNeeded() {
+        let snapshot = SharedTimerStore.load()
+        let progressiveTitles = ["Progressive", "Break"]
+        guard !snapshot.isActive || progressiveTitles.contains(snapshot.title) else { return }
+
+        if !snapshot.isActive {
+            guard isRunning || awaitingPlayAfterBreak || showingFocusFeedback || time != selectedTime else { return }
+            // Companion cleared the session (Watch stop / idle).
+            SharedTimerSync.suppressWatchBroadcast = true
+            defer { SharedTimerSync.suppressWatchBroadcast = false }
+            startAnchor = nil
+            flushFocusStats()
+            isRunning = false
+            timer?.invalidate()
+            timer = nil
+            LiveActivityManager.endAll()
+            SessionAlarmScheduler.cancel()
+            isBreakTime = false
+            awaitingPlayAfterBreak = false
+            showingFocusFeedback = false
+            showingStruggleSheet = false
+            time = snapshot.phaseDuration > 0 ? snapshot.phaseDuration : defaultTimeStart
+            selectedTime = time
+            lastFocusDuration = time
+            return
+        }
+
+        applySnapshot(snapshot, republish: false)
+    }
+
+    private func applySnapshot(_ snapshot: SharedTimerStore.Snapshot, republish: Bool) {
+        SharedTimerSync.suppressWatchBroadcast = !republish
+        defer { SharedTimerSync.suppressWatchBroadcast = false }
+
+        timer?.invalidate()
+        timer = nil
+        startAnchor = nil
 
         isBreakTime = snapshot.isBreak
         selectedTime = snapshot.phaseDuration
-        if snapshot.isBreak {
-            // Keep progressive focus memory intact for after break.
-        } else {
+        if !snapshot.isBreak {
             lastFocusDuration = snapshot.phaseDuration
         }
 
@@ -375,11 +417,14 @@ struct ProgressiveTimerView: View {
             guard time > 0 else { return }
             isRunning = true
             awaitingPlayAfterBreak = false
-            startTimer()
+            startTimer(fromAdoption: true)
         } else {
             time = snapshot.remainingWhenPaused
             isRunning = false
             awaitingPlayAfterBreak = !snapshot.isBreak && snapshot.remainingWhenPaused > 0
+            if time > 0 {
+                LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: true)
+            }
         }
     }
     
@@ -489,10 +534,12 @@ struct ProgressiveTimerView: View {
     
     // MARK: - Timer
     
-    func startTimer() {
-        let stats = ensureSessionStats()
-        stats.timersStarted += 1
-        try? modelContext.save()
+    func startTimer(fromAdoption: Bool = false) {
+        if !fromAdoption {
+            let stats = ensureSessionStats()
+            stats.timersStarted += 1
+            try? modelContext.save()
+        }
         
         LiveActivityManager.start(
             taskTitle: isBreakTime ? "Break" : "Progressive Timer",

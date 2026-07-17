@@ -93,6 +93,7 @@ struct EditTask: View {
             }
             .navigationTitle(isNew ? "New Timer" : "Edit Timer")
             .navigationBarTitleDisplayMode(.inline)
+            .tint(OnboardingStyle.tomatoRed)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: handleCancel) {

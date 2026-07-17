@@ -4,9 +4,11 @@
 //
 
 import Foundation
+#if canImport(WidgetKit)
 import WidgetKit
+#endif
 
-/// App Group–backed session snapshot for Home Screen widgets and App Intents.
+/// App Group–backed session snapshot for Home Screen widgets, App Intents, and Watch sync.
 enum SharedTimerStore {
     static let appGroupID = "group.giusscos.TomaTask"
     static let widgetKind = "TomaTaskTimerWidget"
@@ -83,7 +85,9 @@ enum SharedTimerStore {
     }
 
     static func reloadWidgets() {
+#if canImport(WidgetKit)
         WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+#endif
     }
 
     static func formatted(_ time: TimeInterval) -> String {

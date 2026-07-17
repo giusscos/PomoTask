@@ -16,6 +16,7 @@ struct TomaTaskApp: App {
     
     init() {
         try? Tips.configure([.displayFrequency(.immediate)])
+        WatchSessionManager.shared.activate()
         do {
             container = try ModelContainer(for: TomaTask.self, Statistics.self)
             container.mainContext.undoManager = UndoManager()
