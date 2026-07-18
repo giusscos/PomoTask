@@ -23,6 +23,13 @@ struct OnboardingPaywallView: View {
             .subscriptionStoreButtonLabel(.multiline)
             .storeButton(.visible, for: .restorePurchases)
             .tint(.white)
+            .onInAppPurchaseCompletion { product, result in
+                guard case .success(.success(_)) = result else { return }
+                await MainActor.run {
+                    store.grantProduct(product)
+                    completeOnboarding()
+                }
+            }
         }
         .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
@@ -31,13 +38,15 @@ struct OnboardingPaywallView: View {
                 completeOnboarding()
             }
         }
-        .onAppear {
+        .task {
+            await store.updateCustomerProductStatus()
             if !store.purchasedSubscriptions.isEmpty {
                 completeOnboarding()
             }
         }
     }
     
+    @MainActor
     private func completeOnboarding() {
         hasCompletedOnboarding = true
         hasSeenWhatsNew = true

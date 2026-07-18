@@ -1,0 +1,43 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.96783,0.46434,0.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "carrot-stem.svg",
+          "name" : "carrot-stem",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -98.44892589735602,
+              -124.84814502146311
+            ]
+          }
+        }
+      ],
+      "position" : {
+        "scale" : 2.5,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

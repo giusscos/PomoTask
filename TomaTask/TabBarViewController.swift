@@ -9,7 +9,7 @@ import SwiftUI
 
 let screenSize = UIScreen.main.bounds.height
 
-let defaultAppIcon = "AppIcon"
+let defaultAppIcon = "TomatoAppIcon"
 
 struct TabBarViewController: View {
     @Environment(Store.self) private var store

@@ -6,7 +6,11 @@ enum StatisticsAggregator {
     /// Soft daily focus target used for heatmap intensity (seconds).
     static let dailyGoalSeconds: TimeInterval = 90 * 60
 
-    static let stageFloor = Color(red: 0.98, green: 0.94, blue: 0.93)
+    static let stageFloor = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.13, green: 0.09, blue: 0.09, alpha: 1)
+            : UIColor(red: 0.98, green: 0.94, blue: 0.93, alpha: 1)
+    })
     static let splashPink = Color(red: 0.96, green: 0.72, blue: 0.74)
     static let splashCoral = Color(red: 0.92, green: 0.38, blue: 0.36)
     static let splashDeep = Color(red: 0.86, green: 0.14, blue: 0.14)

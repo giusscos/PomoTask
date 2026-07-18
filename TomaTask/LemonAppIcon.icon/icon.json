@@ -1,0 +1,43 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.96783,0.76383,0.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "lemon-stem.svg",
+          "name" : "lemon-stem",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -8.172125268287203,
+              -143.0273367331279
+            ]
+          }
+        }
+      ],
+      "position" : {
+        "scale" : 2.2,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

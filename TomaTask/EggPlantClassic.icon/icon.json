@@ -1,0 +1,54 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-gray:1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "egg-plant.svg",
+          "name" : "egg-plant",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -16.926893536141463,
+              59.768223645152204
+            ]
+          }
+        },
+        {
+          "image-name" : "epp-plant-stem.svg",
+          "name" : "epp-plant-stem",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              99.47935646385855,
+              -127.38802635484785
+            ]
+          }
+        }
+      ],
+      "position" : {
+        "scale" : 1.9,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

@@ -263,7 +263,7 @@ struct TomatoSplashCalendarView: View {
                     .opacity(showSplash ? 1 : 0)
                 } else {
                     Circle()
-                        .fill(Color.white.opacity(0.55))
+                        .fill(Color(.tertiarySystemFill))
                         .frame(width: 30, height: 30)
                 }
 

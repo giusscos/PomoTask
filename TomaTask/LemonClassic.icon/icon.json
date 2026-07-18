@@ -1,0 +1,56 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-gray:1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "lemon-stem.svg",
+          "name" : "lemon-stem",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              10.427083333333371,
+              -164.8710937387242
+            ]
+          }
+        },
+        {
+          "glass" : false,
+          "image-name" : "lemon.svg",
+          "name" : "lemon",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0.34966442474558335,
+              -5.87109375
+            ]
+          }
+        }
+      ],
+      "position" : {
+        "scale" : 1.8,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

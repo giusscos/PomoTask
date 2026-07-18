@@ -20,7 +20,7 @@ class Store {
     private var subscriptionGroupStatus: RenewalState?
     var isLoading: Bool = true
 
-    private let productIds: [String] = ["pt_499_1m_7d0", "pt_4999_1y_7d0"]
+    private let productIds: [String] = ["pt_499_1w", "pt_4999_1y_7d0"]
     
     let groupId: String = "21571698"
     
@@ -124,14 +124,12 @@ class Store {
                 
                 switch transaction.productType {
                 case .autoRenewable:
-                    if let subscription = subscriptions.first(where: {$0.id == transaction.productID}) {
+                    if let subscription = await product(for: transaction.productID) {
                         nextPurchased.append(subscription)
                     }
                 default:
                     break
                 }
-                //Always finish a transaction.
-                await transaction.finish()
             } catch {
                 print("failed updating products")
             }
@@ -142,6 +140,33 @@ class Store {
         if nextIDs != currentIDs {
             purchasedSubscriptions = nextPurchased
         }
+    }
+
+    /// Immediately adds a product to purchasedSubscriptions after a verified purchase,
+    /// before Transaction.currentEntitlements reflects the new entitlement.
+    @MainActor
+    func grantProduct(_ product: Product) {
+        if !purchasedSubscriptions.contains(where: { $0.id == product.id }) {
+            purchasedSubscriptions.append(product)
+        }
+    }
+
+    /// Prefer the cached catalog; fetch by ID if missing so entitlements still unlock Pro.
+    @MainActor
+    private func product(for productID: String) async -> Product? {
+        if let cached = subscriptions.first(where: { $0.id == productID }) {
+            return cached
+        }
+        do {
+            let products = try await Product.products(for: [productID])
+            if let product = products.first {
+                subscriptions.append(product)
+                return product
+            }
+        } catch {
+            print("Failed product lookup for \(productID): \(error)")
+        }
+        return nil
     }
 }
 

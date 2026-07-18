@@ -77,7 +77,6 @@ struct SettingsView: View {
                 if isSubscribed {
                     showManageSheet.toggle()
                 } else {
-                    UIApplication.shared.setAlternateIconName(defaultAppIcon)
                     showSheet.toggle()
                 }
             } label: {
@@ -113,7 +112,7 @@ struct SettingsView: View {
             AppIconSelectionView(selectedIcon: $appIcon, store: store)
         } label: {
             HStack(spacing: 14) {
-                Image(appIcon)
+                (UIImage(named: AppIconSelectionView.previewAsset(for: appIcon)).map { Image(uiImage: $0) } ?? Image(appIcon))
                     .resizable()
                     .scaledToFit()
                     .frame(width: 44, height: 44)
@@ -300,11 +299,11 @@ private extension View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(StatisticsAggregator.stageFloor)
+                    .fill(Color(.secondarySystemBackground))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(StatisticsAggregator.splashDeep.opacity(0.08), lineWidth: 1)
+                    .strokeBorder(Color(.separator).opacity(0.5), lineWidth: 0.5)
             )
     }
 }

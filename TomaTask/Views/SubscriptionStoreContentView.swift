@@ -22,6 +22,10 @@ struct SubscriptionStoreContentView: View {
             .subscriptionStoreButtonLabel(.multiline)
             .storeButton(.visible, for: .restorePurchases)
             .tint(.white)
+            .onInAppPurchaseCompletion { product, result in
+                guard case .success(.success(_)) = result else { return }
+                await MainActor.run { store.grantProduct(product) }
+            }
         }
         .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
     }
