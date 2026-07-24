@@ -67,6 +67,7 @@ struct ProgressiveTimerView: View {
     
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage("preventScreenLock") private var preventScreenLock = true
+    @AppStorage("allowTimerDialDrag") private var allowTimerDialDrag = true
     
     @State private var showingFocusFeedback = false
     @State private var showingStruggleSheet = false
@@ -102,9 +103,8 @@ struct ProgressiveTimerView: View {
         time / 60
     }
     
-    private var phaseDurationMinutes: Int {
-        max(1, Int((selectedTime / 60).rounded()))
-    }
+    /// Manual dial wind can exceed the progressive auto-cap (25′), matching EditTask’s focus range.
+    private var dialWindMaxMinutes: Int { 120 }
     
     private var toolbarSubtitle: String {
         if awaitingPlayAfterBreak {
@@ -217,6 +217,17 @@ struct ProgressiveTimerView: View {
                         .animation(.default, value: preventScreenLock)
                     }
                     
+                    Button {
+                        allowTimerDialDrag.toggle()
+                    } label: {
+                        Label(
+                            allowTimerDialDrag ? "Dial Drag: On" : "Dial Drag: Off",
+                            systemImage: allowTimerDialDrag ? "hand.draw.fill" : "hand.draw"
+                        )
+                        .contentTransition(.symbolEffect(.replace))
+                        .animation(.default, value: allowTimerDialDrag)
+                    }
+                    
                     if time != selectedTime || isRunning || isBreakTime || awaitingPlayAfterBreak {
                         Button(role: .destructive) {
                             resetTimer()
@@ -302,9 +313,9 @@ struct ProgressiveTimerView: View {
         PomodoroDialPicker(
             formattedTime: formattedTime(),
             remainingMinutes: remainingMinutes,
-            maxMinutes: phaseDurationMinutes,
-            isInteractive: false,
-            onWind: { _ in }
+            maxMinutes: dialWindMaxMinutes,
+            isInteractive: allowTimerDialDrag && !isRunning && !showingFocusFeedback && !showingStruggleSheet,
+            onWind: { windDial(toMinutes: $0) }
         )
     }
     
@@ -671,6 +682,37 @@ struct ProgressiveTimerView: View {
         selectedTime = defaultTimeStart
         lastFocusDuration = defaultTimeStart
         sessionStats = nil
+    }
+    
+    /// Winding the dial: sets remaining time. Dragging past the current phase (or the 25′ auto-cap) extends it.
+    private func windDial(toMinutes minutes: Int) {
+        guard !isRunning else { return }
+        
+        let capped = max(0, min(minutes, dialWindMaxMinutes))
+        let newTime = TimeInterval(capped * 60)
+        
+        if newTime > selectedTime {
+            selectedTime = newTime
+            if !isBreakTime {
+                lastFocusDuration = newTime
+            }
+        }
+        
+        awaitingPlayAfterBreak = false
+        time = newTime
+        SessionAlarmScheduler.cancel()
+        LiveActivityManager.endAll()
+        
+        if time > 0 {
+            SharedTimerSync.publishPaused(
+                title: isBreakTime ? "Break" : "Progressive",
+                timeRemaining: time,
+                phaseDuration: selectedTime,
+                isBreak: isBreakTime
+            )
+        } else {
+            SharedTimerSync.publishIdle(phaseDuration: max(selectedTime, defaultTimeStart))
+        }
     }
     
     private func startBackgroundTimer() {

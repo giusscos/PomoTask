@@ -42,8 +42,6 @@ let proFeatures: [ProFeature] = [
 
 /// Shared marketing header — tomato field + pop animations, matching onboarding.
 struct PaywallMarketingContent: View {
-    var onContinueWithClassic: (() -> Void)? = nil
-
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "dial.medium.fill")
@@ -70,19 +68,6 @@ struct PaywallMarketingContent: View {
                     PaywallFeatureRow(feature: feature)
                         .onboardingPop(delay: 0.28 + Double(index) * 0.08)
                 }
-                
-                if let onContinueWithClassic {
-                    Button(action: onContinueWithClassic) {
-                        Text("Continue with Classic")
-                            .font(.subheadline.weight(.semibold))
-                            .fontDesign(.rounded)
-                            .foregroundStyle(.white.opacity(0.75))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                    }
-                    .buttonStyle(.plain)
-                    .onboardingPop(delay: 0.28 + Double(proFeatures.count) * 0.08)
-                }
 
                 HStack(spacing: 16) {
                     Link("Privacy Policy", destination: LegalURLs.privacyPolicy)
@@ -98,7 +83,7 @@ struct PaywallMarketingContent: View {
                 .fontDesign(.rounded)
                 .foregroundStyle(.white.opacity(0.85))
                 .padding(.top, 8)
-                .onboardingPop(delay: 0.28 + Double(proFeatures.count + 1) * 0.08)
+                .onboardingPop(delay: 0.28 + Double(proFeatures.count) * 0.08)
             }
             .padding(.top, 8)
         }

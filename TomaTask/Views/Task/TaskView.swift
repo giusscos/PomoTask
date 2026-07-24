@@ -8,7 +8,7 @@ import TipKit
 
 struct StartTimerTip: Tip {
     var title: Text { Text("Start your session") }
-    var message: Text? { Text("Tap the button to start or pause. The dial scrolls automatically as time passes.") }
+    var message: Text? { Text("Tap play to start. While paused, drag the dial to wind or reset time.") }
     var image: Image? { Image(systemName: "timer") }
 }
 
@@ -22,6 +22,7 @@ struct TaskView: View {
     
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage("preventScreenLock") private var preventScreenLock = true
+    @AppStorage("allowTimerDialDrag") private var allowTimerDialDrag = true
     
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
@@ -129,6 +130,17 @@ struct TaskView: View {
                         .contentTransition(.symbolEffect(.replace))
                         .animation(.default, value: preventScreenLock)
                     }
+                    
+                    Button {
+                        allowTimerDialDrag.toggle()
+                    } label: {
+                        Label(
+                            allowTimerDialDrag ? "Dial Drag: On" : "Dial Drag: Off",
+                            systemImage: allowTimerDialDrag ? "hand.draw.fill" : "hand.draw"
+                        )
+                        .contentTransition(.symbolEffect(.replace))
+                        .animation(.default, value: allowTimerDialDrag)
+                    }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(.white.opacity(0.9))
@@ -179,8 +191,8 @@ struct TaskView: View {
             formattedTime: engine.formattedTime,
             remainingMinutes: engine.remainingMinutes,
             maxMinutes: engine.phaseDurationMinutes,
-            isInteractive: false,
-            onWind: { _ in }
+            isInteractive: allowTimerDialDrag && !engine.isRunning,
+            onWind: { engine.windDial(toMinutes: $0) }
         )
     }
     

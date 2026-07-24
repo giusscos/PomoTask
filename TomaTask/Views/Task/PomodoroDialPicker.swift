@@ -23,6 +23,7 @@ struct PomodoroDialPicker: View {
     @State private var dragStartMinutes: Double = 0
     @State private var dragTranslation: CGFloat = 0
     @State private var isDragging = false
+    @State private var lastHapticMinute: Int = -1
     
     private var range: ClosedRange<Int> { 0...max(1, maxMinutes) }
     
@@ -31,6 +32,13 @@ struct PomodoroDialPicker: View {
             return snappedMinutes
         }
         return max(0, min(Double(maxMinutes), remainingMinutes))
+    }
+    
+    private var displayTimeLabel: String {
+        if isDragging || formattedTime.isEmpty {
+            return String(format: "%02d:00", Int(displayedMinutes.rounded(.down)))
+        }
+        return formattedTime
     }
     
     private var rulerOffset: CGFloat {
@@ -55,11 +63,11 @@ struct PomodoroDialPicker: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            Text(formattedTime.isEmpty ? String(format: "%02d:00", Int(displayedMinutes.rounded(.down))) : formattedTime)
+            Text(displayTimeLabel)
                 .font(.system(size: 64, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText())
-                .animation(.snappy(duration: 0.2), value: remainingMinutes)
+                .animation(.snappy(duration: 0.2), value: isDragging ? snappedInt : Int(remainingMinutes.rounded()))
                 .foregroundStyle(.white)
             
             ZStack(alignment: .top) {
@@ -103,12 +111,13 @@ struct PomodoroDialPicker: View {
                 if !isDragging {
                     isDragging = true
                     dragStartMinutes = remainingMinutes
+                    lastHapticMinute = Int(remainingMinutes.rounded())
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
                 dragTranslation = g.translation.width
                 let new = snappedInt
-                let currentShown = Int(remainingMinutes.rounded())
-                if new != currentShown {
+                if new != lastHapticMinute {
+                    lastHapticMinute = new
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 }
             }
@@ -116,6 +125,7 @@ struct PomodoroDialPicker: View {
                 let final = snappedInt
                 onWind(final)
                 dragStartMinutes = Double(final)
+                lastHapticMinute = -1
                 withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
                     dragTranslation = 0
                     isDragging = false

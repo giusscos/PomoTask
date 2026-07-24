@@ -15,10 +15,11 @@ struct OnboardingPaywallView: View {
     var body: some View {
         VStack(spacing: 0) {
             SubscriptionStoreView(groupID: store.groupId) {
-                PaywallMarketingContent(onContinueWithClassic: completeOnboarding)
+                PaywallMarketingContent()
                     .background(OnboardingStyle.tomatoRed)
             }
             .scrollIndicators(.hidden)
+            .storeButton(.hidden, for: .cancellation)
             .subscriptionStoreControlStyle(.pagedPicker, placement: .bottomBar)
             .subscriptionStoreButtonLabel(.multiline)
             .storeButton(.visible, for: .restorePurchases)
@@ -33,6 +34,19 @@ struct OnboardingPaywallView: View {
         }
         .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: completeOnboarding) {
+                    Text("Go Classic")
+                        .font(.headline)
+                        .fontDesign(.rounded)
+                }
+                .tint(.blue)
+                .buttonStyle(.borderedProminent)
+                .accessibilityHint("Skip Progressive and start with the Classic timer")
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onChange(of: store.purchasedSubscriptions.count) { _, count in
             if count > 0 {
                 completeOnboarding()
