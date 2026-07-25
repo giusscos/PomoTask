@@ -8,22 +8,17 @@
 import SwiftUI
 import WatchKit
 
-private let watchDefaultTimeStart: Double = 5 * 60
-private let watchDefaultMinSeconds: Double = 3 * 60
-private let watchDefaultMaxSeconds: Double = 25 * 60
-private let watchBreakMinSeconds: Double = 3 * 60
-private let watchBreakMaxSeconds: Double = 8 * 60
-
 struct WatchProgressiveTimerView: View {
     @Environment(\.modelContext) private var modelContext
 
-    @State private var time: TimeInterval = watchDefaultTimeStart
+    @State private var time: TimeInterval = ProgressiveDuration.defaultTimeStart
     @State private var timer: Timer?
     @State private var isRunning = false
     @State private var isBreakTime = false
-    @State private var selectedTime = watchDefaultTimeStart
-    @State private var lastFocusDuration = watchDefaultTimeStart
+    @State private var selectedTime = ProgressiveDuration.defaultTimeStart
+    @State private var lastFocusDuration = ProgressiveDuration.defaultTimeStart
     @State private var showingSheet = false
+    @State private var showingStruggleSheet = false
     @State private var awaitingPlayAfterBreak = false
 
     @State private var startAnchor: Date?
@@ -37,50 +32,78 @@ struct WatchProgressiveTimerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                Text(statusTitle)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
+            ZStack {
+                BrandColors.phaseColor(isBreak: isBreakTime)
+                    .ignoresSafeArea()
 
-                Text(SharedTimerStore.formatted(time))
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .monospacedDigit()
+                VStack(spacing: 6) {
+                    Text(statusTitle)
+                        .font(.caption2.weight(.semibold))
+                        .fontWidth(.condensed)
+                        .textCase(.uppercase)
+                        .tracking(0.8)
+                        .opacity(0.8)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
 
-                HStack(spacing: 24) {
-                    Button {
-                        resetTimer()
-                    } label: {
-                        Label("Stop", systemImage: "stop.fill")
-                            .font(.title2)
-                            .labelStyle(.iconOnly)
+                    Text(SharedTimerStore.formatted(time))
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .padding(.vertical, 4)
+
+                    HStack(spacing: 18) {
+                        Button {
+                            resetTimer()
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.title3)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canStop)
+                        .opacity(canStop ? 1 : 0.35)
+
+                        Button {
+                            togglePlayPause()
+                        } label: {
+                            Image(systemName: isRunning ? "pause.circle.fill" : "play.circle.fill")
+                                .font(.system(size: 36))
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            pauseForStruggle()
+                        } label: {
+                            Image(systemName: "exclamationmark.bubble.fill")
+                                .font(.title3)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canStruggle)
+                        .opacity(canStruggle ? 1 : 0.35)
+                        .accessibilityLabel("I'm struggling")
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!isRunning && time == selectedTime && !awaitingPlayAfterBreak)
-
-                    Button {
-                        togglePlayPause()
-                    } label: {
-                        Label(
-                            isRunning ? "Pause" : "Start",
-                            systemImage: isRunning ? "pause.fill" : "play.fill"
-                        )
-                        .font(.title2)
-                        .labelStyle(.iconOnly)
-                        .contentTransition(.symbolEffect(.replace))
-                    }
-                    .buttonStyle(.plain)
                 }
-                .foregroundStyle(.primary)
+                .padding(.horizontal, 8)
+                .foregroundStyle(.white)
             }
-            .padding()
             .navigationTitle("Progressive")
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(isPresented: $showingSheet) {
                 WatchFeedbackSheet(
                     currentFocusSeconds: lastFocusDuration,
                     onFlow: { applyFlow() },
                     onShorter: { applyShorter() },
                     onBreak: { applyBreak() }
+                )
+            }
+            .sheet(isPresented: $showingStruggleSheet) {
+                WatchStruggleSheet(
+                    onKeepGoing: { applyStruggleKeepGoing() },
+                    onShorten: { applyStruggleShorten() },
+                    onBreakNow: { applyStruggleBreakNow() }
                 )
             }
             .onAppear {
@@ -94,7 +117,20 @@ struct WatchProgressiveTimerView: View {
 
     private var statusTitle: String {
         if awaitingPlayAfterBreak { return "Break over" }
-        return isBreakTime ? "Break time" : "Focus time"
+        if isBreakTime { return "Break" }
+        let next = ProgressiveDuration.increased(lastFocusDuration)
+        if next > lastFocusDuration {
+            return "Focus · to \(ProgressiveDuration.minutesLabel(next))"
+        }
+        return "Focus · \(ProgressiveDuration.minutesLabel(lastFocusDuration))"
+    }
+
+    private var canStop: Bool {
+        isRunning || time != selectedTime || awaitingPlayAfterBreak || isBreakTime
+    }
+
+    private var canStruggle: Bool {
+        isRunning && !isBreakTime && !mirrorsPhoneSession
     }
 
     private func togglePlayPause() {
@@ -105,6 +141,12 @@ struct WatchProgressiveTimerView: View {
             mirrorsPhoneSession = false
             startTimer(ownsSession: true)
         }
+    }
+
+    private func pauseForStruggle() {
+        guard canStruggle else { return }
+        pauseTimer()
+        showingStruggleSheet = true
     }
 
     // MARK: - Timer
@@ -193,12 +235,13 @@ struct WatchProgressiveTimerView: View {
         mirrorsPhoneSession = false
         awaitingPlayAfterBreak = false
         showingSheet = false
+        showingStruggleSheet = false
         isBreakTime = false
-        time = watchDefaultTimeStart
-        selectedTime = watchDefaultTimeStart
-        lastFocusDuration = watchDefaultTimeStart
+        time = ProgressiveDuration.defaultTimeStart
+        selectedTime = ProgressiveDuration.defaultTimeStart
+        lastFocusDuration = ProgressiveDuration.defaultTimeStart
         sessionStats = nil
-        SharedTimerSync.publishIdle(phaseDuration: watchDefaultTimeStart)
+        SharedTimerSync.publishIdle(phaseDuration: ProgressiveDuration.defaultTimeStart)
     }
 
     private func handleLocalCompletion() {
@@ -233,7 +276,7 @@ struct WatchProgressiveTimerView: View {
     // MARK: - Feedback
 
     private func applyFlow() {
-        let next = min(lastFocusDuration + watchDefaultMinSeconds, watchDefaultMaxSeconds)
+        let next = ProgressiveDuration.increased(lastFocusDuration)
         lastFocusDuration = next
         selectedTime = next
         time = next
@@ -243,7 +286,7 @@ struct WatchProgressiveTimerView: View {
     }
 
     private func applyShorter() {
-        let next = max(lastFocusDuration - watchDefaultMinSeconds, watchDefaultMinSeconds)
+        let next = ProgressiveDuration.decreased(lastFocusDuration)
         lastFocusDuration = next
         selectedTime = next
         time = next
@@ -259,12 +302,34 @@ struct WatchProgressiveTimerView: View {
     }
 
     private func applyBreak() {
-        let raw = lastFocusDuration * 0.2
-        let breakSeconds = min(max(raw, watchBreakMinSeconds), watchBreakMaxSeconds)
+        let breakSeconds = ProgressiveDuration.breakDuration(forFocusSeconds: lastFocusDuration)
         selectedTime = breakSeconds
         time = breakSeconds
         isBreakTime = true
         showingSheet = false
+        startTimer(ownsSession: true)
+    }
+
+    // MARK: - Struggle
+
+    private func applyStruggleKeepGoing() {
+        showingStruggleSheet = false
+        startTimer(ownsSession: true)
+    }
+
+    private func applyStruggleShorten() {
+        time = ProgressiveDuration.shortenedRemaining(time)
+        selectedTime = time
+        showingStruggleSheet = false
+        startTimer(ownsSession: true)
+    }
+
+    private func applyStruggleBreakNow() {
+        let breakSeconds = ProgressiveDuration.breakDuration(forFocusSeconds: lastFocusDuration)
+        selectedTime = breakSeconds
+        time = breakSeconds
+        isBreakTime = true
+        showingStruggleSheet = false
         startTimer(ownsSession: true)
     }
 
@@ -298,6 +363,7 @@ struct WatchProgressiveTimerView: View {
                 return
             }
             awaitingPlayAfterBreak = false
+            showingStruggleSheet = false
             startTimer(ownsSession: false)
         } else if snapshot.isActive {
             time = snapshot.remainingWhenPaused
@@ -307,12 +373,13 @@ struct WatchProgressiveTimerView: View {
             WatchTimerRuntime.shared.stop()
             WatchSessionNotifier.cancel()
         } else if !isRunning {
-            time = snapshot.phaseDuration > 0 ? snapshot.phaseDuration : watchDefaultTimeStart
+            time = snapshot.phaseDuration > 0 ? snapshot.phaseDuration : ProgressiveDuration.defaultTimeStart
             selectedTime = time
             lastFocusDuration = time
             mirrorsPhoneSession = false
             awaitingPlayAfterBreak = false
             isBreakTime = false
+            showingStruggleSheet = false
             WatchTimerRuntime.shared.stop()
             WatchSessionNotifier.cancel()
         }
@@ -344,52 +411,95 @@ struct WatchFeedbackSheet: View {
     let onShorter: () -> Void
     let onBreak: () -> Void
 
-    private var flowNext: Double {
-        min(currentFocusSeconds + watchDefaultMinSeconds, watchDefaultMaxSeconds)
-    }
-
-    private var shorterNext: Double {
-        max(currentFocusSeconds - watchDefaultMinSeconds, watchDefaultMinSeconds)
-    }
-
-    private var breakNext: Double {
-        let raw = currentFocusSeconds * 0.2
-        return min(max(raw, watchBreakMinSeconds), watchBreakMaxSeconds)
-    }
+    private var flowNext: Double { ProgressiveDuration.increased(currentFocusSeconds) }
+    private var shorterNext: Double { ProgressiveDuration.decreased(currentFocusSeconds) }
+    private var breakNext: Double { ProgressiveDuration.breakDuration(forFocusSeconds: currentFocusSeconds) }
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text("How focused were you?")
-                .font(.headline)
+        ScrollView {
+            VStack(spacing: 8) {
+                Text("How focused were you?")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
 
-            Button(role: .destructive) {
-                onBreak()
-                dismiss()
-            } label: {
-                Text("Need a break · \(minutesLabel(breakNext))")
-                    .frame(maxWidth: .infinity)
-            }
+                Button {
+                    onBreak()
+                    dismiss()
+                } label: {
+                    Text("Need a break · \(ProgressiveDuration.minutesLabel(breakNext))")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(BrandColors.breakRed)
 
-            Button {
-                onShorter()
-                dismiss()
-            } label: {
-                Text("A bit much · \(minutesLabel(shorterNext))")
-            }
-            .tint(.gray)
+                Button {
+                    onShorter()
+                    dismiss()
+                } label: {
+                    Text("A bit much · \(ProgressiveDuration.minutesLabel(shorterNext))")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(.gray)
 
-            Button {
-                onFlow()
-                dismiss()
-            } label: {
-                Text("In the flow · \(minutesLabel(flowNext))")
+                Button {
+                    onFlow()
+                    dismiss()
+                } label: {
+                    Text("In the flow · \(ProgressiveDuration.minutesLabel(flowNext))")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(BrandColors.tomatoRed)
             }
-            .tint(.blue)
+            .padding(.top, 4)
         }
     }
+}
 
-    private func minutesLabel(_ seconds: Double) -> String {
-        "\(max(1, Int((seconds / 60).rounded())))′"
+struct WatchStruggleSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let onKeepGoing: () -> Void
+    let onShorten: () -> Void
+    let onBreakNow: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                Text("Take a breath")
+                    .font(.headline)
+
+                Text("What would help?")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    onKeepGoing()
+                    dismiss()
+                } label: {
+                    Text("Keep going")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(BrandColors.tomatoRed)
+
+                Button {
+                    onShorten()
+                    dismiss()
+                } label: {
+                    Text("Shorten remaining")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(.gray)
+
+                Button {
+                    onBreakNow()
+                    dismiss()
+                } label: {
+                    Text("Break now")
+                        .frame(maxWidth: .infinity)
+                }
+                .tint(BrandColors.breakRed)
+            }
+            .padding(.top, 4)
+        }
     }
 }
 

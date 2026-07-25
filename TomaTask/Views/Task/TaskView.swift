@@ -26,8 +26,6 @@ struct TaskView: View {
     
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
-    private let tomatoRed = Color(red: 0.86, green: 0.14, blue: 0.14)
-    private let breakRed = Color(red: 0.72, green: 0.22, blue: 0.28)
     private let startTimerTip = StartTimerTip()
     
     var body: some View {
@@ -36,7 +34,7 @@ struct TaskView: View {
             let stemWidth = min(geo.size.width, geo.size.height)
             
             ZStack(alignment: .top) {
-                (engine.isBreak ? breakRed : tomatoRed)
+                BrandColors.phaseColor(isBreak: engine.isBreak)
                     .ignoresSafeArea()
                 
                 PomodoroStemView()

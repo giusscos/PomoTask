@@ -23,7 +23,7 @@ struct WatchTaskRow: View {
                 Text("\(task.maxDuration)")
                     .font(.caption)
                     .bold()
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(BrandColors.tomatoRed)
                 
                 Text(String(localized: " min for "))
                     .font(.caption2)
@@ -31,7 +31,7 @@ struct WatchTaskRow: View {
                 Text("\(task.repetition)")
                     .font(.caption)
                     .bold()
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(BrandColors.tomatoRed)
                 
                 Text(task.repetition == 1
                      ? String(localized: " time")

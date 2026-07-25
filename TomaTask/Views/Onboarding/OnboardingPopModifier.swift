@@ -6,7 +6,7 @@
 import SwiftUI
 
 enum OnboardingStyle {
-    static let tomatoRed = Color(red: 0.86, green: 0.14, blue: 0.14)
+    static let tomatoRed = BrandColors.tomatoRed
     static let popSpring = Animation.spring(response: 0.45, dampingFraction: 0.65)
 }
 

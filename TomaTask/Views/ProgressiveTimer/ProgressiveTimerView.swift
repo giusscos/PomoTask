@@ -9,40 +9,6 @@ import SwiftUI
 import TipKit
 import UserNotifications
 
-var defaultTimeStart: Double = 5 * 60
-var defaultMinSeconds: Double = 3 * 60
-var defaultMaxSeconds: Double = 25 * 60
-private let defaultBreakMinSeconds: Double = 3 * 60
-private let defaultBreakMaxSeconds: Double = 8 * 60
-
-// MARK: - Duration helpers
-
-enum ProgressiveDuration {
-    static func increased(_ seconds: Double) -> Double {
-        min(seconds + defaultMinSeconds, defaultMaxSeconds)
-    }
-    
-    static func decreased(_ seconds: Double) -> Double {
-        max(seconds - defaultMinSeconds, defaultMinSeconds)
-    }
-    
-    /// ~20% of last focus, clamped to 3–8 minutes.
-    static func breakDuration(forFocusSeconds focus: Double) -> Double {
-        let raw = focus * 0.2
-        return min(max(raw, defaultBreakMinSeconds), defaultBreakMaxSeconds)
-    }
-    
-    /// Cut remaining by ~1/3, floor 1 minute.
-    static func shortenedRemaining(_ seconds: Double) -> Double {
-        max(seconds * (2.0 / 3.0), 60)
-    }
-    
-    static func minutesLabel(_ seconds: Double) -> String {
-        let mins = max(1, Int((seconds / 60).rounded()))
-        return "\(mins)′"
-    }
-}
-
 enum ProgressiveNextAction {
     case none
     case autoStart
@@ -74,8 +40,8 @@ struct ProgressiveTimerView: View {
     @State private var awaitingPlayAfterBreak = false
     @State private var nextAction: ProgressiveNextAction = .none
     
-    @State private var selectedTime: Double = defaultTimeStart
-    @State private var lastFocusDuration: Double = defaultTimeStart
+    @State private var selectedTime: Double = ProgressiveDuration.defaultTimeStart
+    @State private var lastFocusDuration: Double = ProgressiveDuration.defaultTimeStart
     @State private var timer: Timer?
     @State var time: TimeInterval = 0
     @State private var isRunning: Bool = false
@@ -95,8 +61,6 @@ struct ProgressiveTimerView: View {
     @State private var backgroundTime: TimeInterval = 0
     @State private var backgroundStartDate: Date?
     
-    private let tomatoRed = Color(red: 0.86, green: 0.14, blue: 0.14)
-    private let breakRed = Color(red: 0.72, green: 0.22, blue: 0.28)
     private let startTimerTip = StartTimerTip()
     
     private var remainingMinutes: Double {
@@ -126,7 +90,7 @@ struct ProgressiveTimerView: View {
             let stemWidth = min(geo.size.width, geo.size.height)
             
             ZStack(alignment: .top) {
-                (isBreakTime ? breakRed : tomatoRed)
+                BrandColors.phaseColor(isBreak: isBreakTime)
                     .ignoresSafeArea()
                 
                 PomodoroStemView()
@@ -259,9 +223,9 @@ struct ProgressiveTimerView: View {
             .presentationDetents([.medium])
         }
         .onAppear {
-            time = defaultTimeStart
-            selectedTime = defaultTimeStart
-            lastFocusDuration = defaultTimeStart
+            time = ProgressiveDuration.defaultTimeStart
+            selectedTime = ProgressiveDuration.defaultTimeStart
+            lastFocusDuration = ProgressiveDuration.defaultTimeStart
             UIApplication.shared.isIdleTimerDisabled = preventScreenLock
             adoptSharedSessionIfNeeded()
             consumeWidgetPendingPlayIfNeeded()
@@ -407,7 +371,7 @@ struct ProgressiveTimerView: View {
             awaitingPlayAfterBreak = false
             showingFocusFeedback = false
             showingStruggleSheet = false
-            time = snapshot.phaseDuration > 0 ? snapshot.phaseDuration : defaultTimeStart
+            time = snapshot.phaseDuration > 0 ? snapshot.phaseDuration : ProgressiveDuration.defaultTimeStart
             selectedTime = time
             lastFocusDuration = time
             return
@@ -437,11 +401,19 @@ struct ProgressiveTimerView: View {
             awaitingPlayAfterBreak = false
             startTimer(fromAdoption: true)
         } else {
+            flushFocusStats()
             time = snapshot.remainingWhenPaused
             isRunning = false
-            awaitingPlayAfterBreak = !snapshot.isBreak && snapshot.remainingWhenPaused > 0
+            // Only "ready when you are" when the full phase is queued (e.g. after "A bit much").
+            awaitingPlayAfterBreak = !snapshot.isBreak
+                && snapshot.remainingWhenPaused > 0
+                && snapshot.remainingWhenPaused >= snapshot.phaseDuration - 0.5
             if time > 0 {
+                SessionAlarmScheduler.pause()
                 LiveActivityManager.update(timeRemaining: time, isBreak: isBreakTime, isPaused: true)
+            } else {
+                SessionAlarmScheduler.cancel()
+                LiveActivityManager.endAll()
             }
         }
     }
@@ -671,16 +643,16 @@ struct ProgressiveTimerView: View {
         isRunning = false
         timer?.invalidate()
         LiveActivityManager.endAll()
-        SharedTimerSync.publishIdle(phaseDuration: defaultTimeStart)
+        SharedTimerSync.publishIdle(phaseDuration: ProgressiveDuration.defaultTimeStart)
         
         isBreakTime = false
         awaitingPlayAfterBreak = false
         showingFocusFeedback = false
         showingStruggleSheet = false
         nextAction = .none
-        time = defaultTimeStart
-        selectedTime = defaultTimeStart
-        lastFocusDuration = defaultTimeStart
+        time = ProgressiveDuration.defaultTimeStart
+        selectedTime = ProgressiveDuration.defaultTimeStart
+        lastFocusDuration = ProgressiveDuration.defaultTimeStart
         sessionStats = nil
     }
     
@@ -711,7 +683,7 @@ struct ProgressiveTimerView: View {
                 isBreak: isBreakTime
             )
         } else {
-            SharedTimerSync.publishIdle(phaseDuration: max(selectedTime, defaultTimeStart))
+            SharedTimerSync.publishIdle(phaseDuration: max(selectedTime, ProgressiveDuration.defaultTimeStart))
         }
     }
     

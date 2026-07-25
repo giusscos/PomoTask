@@ -86,21 +86,21 @@ struct WatchStatisticsView: View {
                         title: "Timers Started",
                         value: "\(filteredStatistics.reduce(0) { $0 + $1.timersStarted })",
                         icon: "play.circle.fill",
-                        color: .blue
+                        color: BrandColors.tomatoRed
                     )
                     
                     WatchStatRow(
                         title: "Timers Completed",
                         value: "\(filteredStatistics.reduce(0) { $0 + $1.timersCompleted })",
                         icon: "checkmark.circle.fill",
-                        color: .green
+                        color: BrandColors.tomatoRed.opacity(0.75)
                     )
                     
                     WatchStatRow(
                         title: "Focus Time",
                         value: formatTime(filteredStatistics.reduce(0) { $0 + $1.totalFocusTime }),
                         icon: "clock.fill",
-                        color: .purple
+                        color: BrandColors.breakRed
                     )
                 } header: {
                     Text("Overview")
@@ -130,7 +130,7 @@ struct WatchStatisticsView: View {
         ScrollView {
             Image(systemName: "chart.bar.fill")
                 .font(.title)
-                .foregroundColor(Color.accentColor)
+                .foregroundColor(BrandColors.tomatoRed)
             
             Text("Statistics")
                 .font(.title2)
@@ -190,7 +190,7 @@ struct WatchStatisticsChartView: View {
                     x: .value("Date", stat.date, unit: timeRange == .day ? .hour : .day),
                     y: .value("Focus Time", stat.totalFocusTime / 60)
                 )
-                .foregroundStyle(Color.accentColor.gradient)
+                .foregroundStyle(BrandColors.tomatoRed.gradient)
             }
         }
         .chartXScale(domain: getXAxisDomain())

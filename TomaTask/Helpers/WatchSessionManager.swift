@@ -58,10 +58,30 @@ final class WatchSessionManager: NSObject {
         SharedTimerStore.save(snapshot)
 #if os(iOS)
         SharedTimerStore.reloadWidgets()
+        // Pause AlarmKit / Live Activity even if Progressive UI isn't mounted yet.
+        applySystemSessionChrome(for: snapshot)
 #endif
         isApplyingRemote = false
         NotificationCenter.default.post(name: .watchCompanionSnapshotDidUpdate, object: nil)
     }
+
+#if os(iOS)
+    /// Keeps Lock Screen countdown in sync with Watch-originated pause/idle.
+    private func applySystemSessionChrome(for snapshot: SharedTimerStore.Snapshot) {
+        if !snapshot.isActive {
+            SessionAlarmScheduler.cancel()
+            LiveActivityManager.endAll()
+            return
+        }
+        guard !snapshot.isRunning else { return }
+        SessionAlarmScheduler.pause()
+        LiveActivityManager.update(
+            timeRemaining: snapshot.remainingWhenPaused,
+            isBreak: snapshot.isBreak,
+            isPaused: true
+        )
+    }
+#endif
 }
 
 extension WatchSessionManager: WCSessionDelegate {
