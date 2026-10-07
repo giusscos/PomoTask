@@ -15,7 +15,7 @@ struct OnboardingWelcomeView: View {
                 .symbolRenderingMode(.hierarchical)
                 .onboardingPop(delay: 0.05)
             
-            Text("TomaTask")
+            Text(verbatim: "PomoTask")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
                 .padding(.top, 28)
                 .onboardingPop(delay: 0.15)

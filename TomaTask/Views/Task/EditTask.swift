@@ -100,8 +100,7 @@ struct EditTask: View {
                     Button(action: handleCancel) {
                         Image(systemName: "xmark")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .tint(.primary)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

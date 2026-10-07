@@ -14,6 +14,15 @@ struct TomaTasksList: View {
     @Query var tomaTasks: [TomaTask]
     
     @State private var sheetConfig: EditSheetConfig?
+    @State private var selection = Set<PersistentIdentifier>()
+    @State private var editMode: EditMode = .inactive
+    @State private var showDeleteConfirmation = false
+    
+    private var isSelecting: Bool { editMode.isEditing }
+    
+    private var allSelected: Bool {
+        !tomaTasks.isEmpty && selection.count == tomaTasks.count
+    }
 
     struct EditSheetConfig: Identifiable {
         let id = UUID()
@@ -38,8 +47,9 @@ struct TomaTasksList: View {
                     .buttonStyle(.borderedProminent)
                 }
             } else {
-                List {
-                    ForEach(tomaTasks) { task in
+                // Multi-select: tap Select, drag along the circles, or two-finger swipe down the list.
+                List(selection: $selection) {
+                    ForEach(tomaTasks, id: \.persistentModelID) { task in
                         NavigationLink {
                             TaskView(task: task)
                         } label: {
@@ -64,14 +74,60 @@ struct TomaTasksList: View {
                 .listStyle(.plain)
             }
         }
-        .navigationTitle("Timers")
+        .navigationTitle(isSelecting && !selection.isEmpty ? Text("\(selection.count) Selected") : Text("Timers"))
         .tint(OnboardingStyle.tomatoRed)
+        .environment(\.editMode, $editMode)
+        .animation(.default, value: isSelecting)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: addTask) {
-                    Image(systemName: "plus")
+            if isSelecting {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(allSelected ? "Deselect All" : "Select All") {
+                        selection = allSelected ? [] : Set(tomaTasks.map(\.persistentModelID))
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { endSelection() }
+                        .fontWeight(.semibold)
+                }
+                ToolbarItem(placement: .bottomBar) {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .disabled(selection.isEmpty)
+                    // Attached to the button so the iOS 26 popover points at the trash icon.
+                    .confirmationDialog(
+                        selection.count == 1 ? Text("Delete Timer?") : Text("Delete \(selection.count) Timers?"),
+                        isPresented: $showDeleteConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Delete", role: .destructive, action: deleteSelected)
+                    } message: {
+                        Text("This can’t be undone.")
+                    }
+                }
+            } else {
+                if !tomaTasks.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Select") {
+                            withAnimation { editMode = .active }
+                        }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: addTask) {
+                        Image(systemName: "plus")
+                    }
                 }
             }
+        }
+        .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
+        .onChange(of: editMode) { _, mode in
+            if !mode.isEditing { selection.removeAll() }
+        }
+        .onChange(of: tomaTasks.count) { _, count in
+            if count == 0 { endSelection() }
         }
         .sheet(item: $sheetConfig) { config in
             EditTask(task: config.task, isNew: config.isNew)
@@ -86,6 +142,21 @@ struct TomaTasksList: View {
     
     private func deleteTask(item: TomaTask) {
         modelContext.delete(item)
+    }
+    
+    private func deleteSelected() {
+        for task in tomaTasks where selection.contains(task.persistentModelID) {
+            modelContext.delete(task)
+        }
+        try? modelContext.save()
+        endSelection()
+    }
+    
+    private func endSelection() {
+        withAnimation {
+            editMode = .inactive
+            selection.removeAll()
+        }
     }
 }
 

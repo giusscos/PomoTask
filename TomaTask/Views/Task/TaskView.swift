@@ -4,9 +4,17 @@
 //
 
 import SwiftUI
+import StoreKit
 import TipKit
 
 struct StartTimerTip: Tip {
+    /// Set by TabBarViewController so the tip never pops over onboarding or What's New.
+    @Parameter(.transient) static var isOnboardingComplete: Bool = false
+    
+    var rules: [Rule] {
+        #Rule(Self.$isOnboardingComplete) { $0 == true }
+    }
+    
     var title: Text { Text("Start your session") }
     var message: Text? { Text("Tap play to start. While paused, drag the dial to wind or reset time.") }
     var image: Image? { Image(systemName: "timer") }
@@ -25,6 +33,7 @@ struct TaskView: View {
     @AppStorage("allowTimerDialDrag") private var allowTimerDialDrag = true
     
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.requestReview) private var requestReview
     
     private let startTimerTip = StartTimerTip()
     
@@ -152,6 +161,16 @@ struct TaskView: View {
                 useSolidFill: false
             )
             UIApplication.shared.isIdleTimerDisabled = preventScreenLock
+        }
+        .onChange(of: engine.isComplete) { _, isComplete in
+            guard isComplete else { return }
+            ReviewPrompt.recordCompletedFocusBlock()
+            if ReviewPrompt.shouldRequestAfterPositiveMoment() {
+                Task {
+                    try? await Task.sleep(for: .seconds(1))
+                    requestReview()
+                }
+            }
         }
         .onDisappear {
             engine.tearDown()

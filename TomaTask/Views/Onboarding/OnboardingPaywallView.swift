@@ -4,66 +4,31 @@
 //
 
 import SwiftUI
-import StoreKit
 
 struct OnboardingPaywallView: View {
     @Environment(Store.self) private var store
     
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew = false
+    @AppStorage(WhatsNew.lastSeenVersionKey) private var whatsNewLastSeenVersion = ""
     
     var body: some View {
-        VStack(spacing: 0) {
-            SubscriptionStoreView(groupID: store.groupId) {
-                PaywallMarketingContent()
-                    .background(OnboardingStyle.tomatoRed)
-            }
-            .scrollIndicators(.hidden)
-            .storeButton(.hidden, for: .cancellation)
-            .subscriptionStoreControlStyle(.pagedPicker, placement: .bottomBar)
-            .subscriptionStoreButtonLabel(.multiline)
-            .storeButton(.visible, for: .restorePurchases)
-            .tint(.white)
-            .onInAppPurchaseCompletion { product, result in
-                guard case .success(.success(_)) = result else { return }
-                await MainActor.run {
-                    store.grantProduct(product)
+        PaywallView(context: .onboarding, onClose: completeOnboarding)
+            .navigationBarBackButtonHidden(true)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .task {
+                await store.updateCustomerProductStatus()
+                if !store.purchasedSubscriptions.isEmpty {
                     completeOnboarding()
                 }
             }
-        }
-        .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: completeOnboarding) {
-                    Text("Go Classic")
-                        .font(.headline)
-                        .fontDesign(.rounded)
-                }
-                .tint(.blue)
-                .buttonStyle(.borderedProminent)
-                .accessibilityHint("Skip Progressive and start with the Classic timer")
-            }
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .onChange(of: store.purchasedSubscriptions.count) { _, count in
-            if count > 0 {
-                completeOnboarding()
-            }
-        }
-        .task {
-            await store.updateCustomerProductStatus()
-            if !store.purchasedSubscriptions.isEmpty {
-                completeOnboarding()
-            }
-        }
     }
     
     @MainActor
     private func completeOnboarding() {
         hasCompletedOnboarding = true
         hasSeenWhatsNew = true
+        whatsNewLastSeenVersion = WhatsNew.version
     }
 }
 

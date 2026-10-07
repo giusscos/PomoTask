@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 let screenSize = UIScreen.main.bounds.height
 
@@ -17,7 +18,9 @@ struct TabBarViewController: View {
     
     @AppStorage("appIcon") var appIcon: String = defaultAppIcon
     @AppStorage("hasSeenWhatsNew") private var hasSeenWhatsNew: Bool = false
+    @AppStorage(WhatsNew.lastSeenVersionKey) private var whatsNewLastSeenVersion: String = ""
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @AppStorage(ProgressiveTrial.freeSessionsUsedKey) private var progressiveFreeSessionsUsed = 0
     @State private var selectedTab: AppTab = .progressive
     
     private enum AppTab: Hashable {
@@ -49,7 +52,7 @@ struct TabBarViewController: View {
                 
                 Tab("Progressive", systemImage: "dial.medium", value: .progressive) {
                     NavigationStack {
-                        if isSubscribed {
+                        if isSubscribed || ProgressiveTrial.hasRemaining(used: progressiveFreeSessionsUsed) {
                             ProgressiveTimerView()
                         } else {
                             ProgressiveLockedView()
@@ -77,7 +80,10 @@ struct TabBarViewController: View {
                 hasCompletedOnboarding = true
             }
             SharedStatsSync.publish(using: modelContext)
+            updateStartTimerTipEligibility()
         }
+        .onChange(of: hasCompletedOnboarding) { updateStartTimerTipEligibility() }
+        .onChange(of: whatsNewLastSeenVersion) { updateStartTimerTipEligibility() }
         .onReceive(NotificationCenter.default.publisher(for: .tomaTaskDeepLink)) { notification in
             guard let path = notification.userInfo?["path"] as? String else { return }
             if WidgetDeepLink.shouldOpenStatistics(path: path) {
@@ -94,8 +100,9 @@ struct TabBarViewController: View {
             OnboardingRootView()
                 .environment(store)
         }
-        .fullScreenCover(isPresented: .constant(hasCompletedOnboarding && !hasSeenWhatsNew)) {
+        .fullScreenCover(isPresented: .constant(isShowingWhatsNew)) {
             WhatsNewView()
+                .environment(store)
         }
         .overlay {
             if store.isLoading {
@@ -106,6 +113,16 @@ struct TabBarViewController: View {
                 }
             }
         }
+    }
+}
+
+extension TabBarViewController {
+    private var isShowingWhatsNew: Bool {
+        hasCompletedOnboarding && whatsNewLastSeenVersion != WhatsNew.version
+    }
+    
+    private func updateStartTimerTipEligibility() {
+        StartTimerTip.isOnboardingComplete = hasCompletedOnboarding && !isShowingWhatsNew
     }
 }
 

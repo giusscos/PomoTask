@@ -6,28 +6,13 @@
 //
 
 import SwiftUI
-import StoreKit
 
+/// Sheet wrapper for the Pro paywall (Settings, Statistics, locked Progressive tab).
 struct SubscriptionStoreContentView: View {
-    @Environment(Store.self) private var store
+    var context: PaywallContext = .general
     
     var body: some View {
-        VStack(spacing: 0) {
-            SubscriptionStoreView(groupID: store.groupId) {
-                PaywallMarketingContent()
-                    .background(OnboardingStyle.tomatoRed)
-            }
-            .scrollIndicators(.hidden)
-            .subscriptionStoreControlStyle(.pagedPicker, placement: .bottomBar)
-            .subscriptionStoreButtonLabel(.multiline)
-            .storeButton(.visible, for: .restorePurchases)
-            .tint(.white)
-            .onInAppPurchaseCompletion { product, result in
-                guard case .success(.success(_)) = result else { return }
-                await MainActor.run { store.grantProduct(product) }
-            }
-        }
-        .background(OnboardingStyle.tomatoRed.ignoresSafeArea())
+        PaywallView(context: context)
     }
 }
 

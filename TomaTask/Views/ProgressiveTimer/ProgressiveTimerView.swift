@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import StoreKit
 import TipKit
 import UserNotifications
 
@@ -30,7 +31,10 @@ struct ProgressiveTimerView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.requestReview) private var requestReview
+    @Environment(Store.self) private var store
     
+    @AppStorage(ProgressiveTrial.freeSessionsUsedKey) private var freeSessionsUsed = 0
     @AppStorage(SessionAlertStorage.alarmEnabled) private var alarmEnabled = true
     @AppStorage("preventScreenLock") private var preventScreenLock = true
     @AppStorage("allowTimerDialDrag") private var allowTimerDialDrag = true
@@ -39,6 +43,8 @@ struct ProgressiveTimerView: View {
     @State private var showingStruggleSheet = false
     @State private var awaitingPlayAfterBreak = false
     @State private var nextAction: ProgressiveNextAction = .none
+    @State private var countsAsFreeSession = false
+    @State private var shouldRequestReview = false
     
     @State private var selectedTime: Double = ProgressiveDuration.defaultTimeStart
     @State private var lastFocusDuration: Double = ProgressiveDuration.defaultTimeStart
@@ -127,8 +133,8 @@ struct ProgressiveTimerView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 2) {
+            ToolbarItem(placement: .topBarLeading) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Progressive")
                         .font(.title3.weight(.bold))
                         .fontDesign(.rounded)
@@ -144,7 +150,9 @@ struct ProgressiveTimerView: View {
                         .minimumScaleFactor(0.8)
                 }
                 .foregroundStyle(.white)
+                .fixedSize()
             }
+            .hidingSharedBackground()
             
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if isRunning && !isBreakTime {
@@ -445,6 +453,7 @@ struct ProgressiveTimerView: View {
         selectedTime = next
         isBreakTime = false
         nextAction = .autoStart
+        shouldRequestReview = ReviewPrompt.shouldRequestAfterPositiveMoment()
         showingFocusFeedback = false
     }
     
@@ -469,9 +478,28 @@ struct ProgressiveTimerView: View {
         time = selectedTime
         let shouldAutoStart = nextAction == .autoStart
         nextAction = .none
+        
+        if countsAsFreeSession {
+            countsAsFreeSession = false
+            freeSessionsUsed += 1
+            // Last free block used: TabBarViewController swaps in the Pro paywall, so don't start another phase.
+            if !ProgressiveTrial.hasRemaining(used: freeSessionsUsed) {
+                shouldRequestReview = false
+                return
+            }
+        }
+        
         if shouldAutoStart {
             isRunning = true
             startTimer()
+        }
+        
+        if shouldRequestReview {
+            shouldRequestReview = false
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                requestReview()
+            }
         }
     }
     
@@ -747,10 +775,27 @@ struct ProgressiveTimerView: View {
         stats.timersCompleted += 1
         try? modelContext.save()
 
+        if !isBreakTime {
+            ReviewPrompt.recordCompletedFocusBlock()
+            countsAsFreeSession = store.purchasedSubscriptions.isEmpty
+        }
+
         LiveActivityManager.endAll()
         isRunning = false
         timer?.invalidate()
         handlePhaseCompletion()
+    }
+}
+
+extension ToolbarContent {
+    /// Drops the iOS 26 glass capsule behind plain-text toolbar items.
+    @ToolbarContentBuilder
+    func hidingSharedBackground() -> some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            sharedBackgroundVisibility(.hidden)
+        } else {
+            self
+        }
     }
 }
 

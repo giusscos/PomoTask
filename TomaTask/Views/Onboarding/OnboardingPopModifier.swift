@@ -11,7 +11,7 @@ enum OnboardingStyle {
 }
 
 enum LegalURLs {
-    static let privacyPolicy = URL(string: "https://giusscos.it/privacy")!
+    static let privacyPolicy = URL(string: "https://giusscos.com/work/pomotask/privacy/")!
     static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 }
 

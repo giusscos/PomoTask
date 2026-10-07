@@ -15,12 +15,14 @@ typealias RenewalState = StoreKit.Product.SubscriptionInfo.RenewalState // the r
 
 @Observable
 class Store {
-    private var subscriptions: [Product] = []
+    private(set) var subscriptions: [Product] = []
     var purchasedSubscriptions: [Product] = []
     private var subscriptionGroupStatus: RenewalState?
     var isLoading: Bool = true
 
-    private let productIds: [String] = ["pt_499_1w", "pt_4999_1y_7d0"]
+    static let weeklyID = "pt_499_1w"
+    static let yearlyID = "pt_4999_1y_7d0"
+    private let productIds: [String] = [Store.weeklyID, Store.yearlyID]
     
     let groupId: String = "21571698"
     
@@ -96,6 +98,19 @@ class Store {
         default:
             return nil
         }
+    }
+    
+    /// Paywall order: most expensive (yearly) first.
+    var paywallProducts: [Product] {
+        subscriptions
+            .filter { productIds.contains($0.id) }
+            .sorted { $0.price > $1.price }
+    }
+    
+    @MainActor
+    func restorePurchases() async {
+        try? await AppStore.sync()
+        await updateCustomerProductStatus()
     }
     
     func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

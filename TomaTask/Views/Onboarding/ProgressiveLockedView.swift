@@ -21,7 +21,7 @@ struct ProgressiveLockedView: View {
                 .font(.title.weight(.bold))
                 .fontDesign(.rounded)
             
-            Text("Start short, grow with flow, and recover smart. Unlock Progressive with Pro.")
+            Text("You’ve used your \(ProgressiveTrial.freeSessionLimit) free Progressive sessions. Unlock Pro to keep growing your focus.")
                 .font(.body.weight(.medium))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -47,7 +47,7 @@ struct ProgressiveLockedView: View {
         .navigationTitle("Progressive")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPaywall) {
-            SubscriptionStoreContentView()
+            SubscriptionStoreContentView(context: .trialEnded)
         }
     }
 }

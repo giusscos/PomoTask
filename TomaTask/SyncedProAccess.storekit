@@ -24,7 +24,7 @@
     "_developerTeamID" : "MA7MBQ947C",
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 806020941.45122194,
+    "_lastSynchronizedDate" : 813054043.85189795,
     "_locale" : "en_US",
     "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "USA",
@@ -68,10 +68,43 @@
     ],
     "_timeRate" : 0
   },
+  "subscriptionBundleGroups" : [
+
+  ],
   "subscriptionGroups" : [
     {
       "id" : "21571698",
       "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "Acceso Pro",
+          "locale" : "es_ES"
+        },
+        {
+          "description" : "",
+          "displayName" : "Acceso Pro",
+          "locale" : "es_MX"
+        },
+        {
+          "description" : "",
+          "displayName" : "Accesso Pro",
+          "locale" : "it"
+        },
+        {
+          "description" : "",
+          "displayName" : "Accès Pro",
+          "locale" : "fr"
+        },
+        {
+          "description" : "",
+          "displayName" : "Acesso Pro",
+          "locale" : "pt_BR"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro Access",
+          "locale" : "en_GB"
+        },
         {
           "description" : "",
           "displayName" : "Pro Access",
@@ -81,6 +114,36 @@
           "description" : "",
           "displayName" : "Pro Access",
           "locale" : "en_US"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro 会员",
+          "locale" : "zh_Hans"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro 會員",
+          "locale" : "zh_Hant"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro 이용권",
+          "locale" : "ko"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro-Zugang",
+          "locale" : "de"
+        },
+        {
+          "description" : "",
+          "displayName" : "Pro-toegang",
+          "locale" : "nl"
+        },
+        {
+          "description" : "",
+          "displayName" : "Proアクセス",
+          "locale" : "ja"
         }
       ],
       "name" : "PomoTask Pro Access",
@@ -105,39 +168,32 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6737521865",
+          "introductoryOffer" : {
+            "billingPlanType" : "BILLED_UPFRONT",
+            "internalID" : "eyJzIjoiNjczNzUyMTg2NSIsImQiOjE3OTEzNTY0MDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
           "introductoryOffers" : [
-
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "internalID" : "eyJzIjoiNjczNzUyMTg2NSIsImQiOjE3OTEzNTY0MDAsImkiOiJVUyIsInQiOiIiLCJwIjoiMCJ9",
+              "numberOfPeriods" : 1,
+              "paymentMode" : "free",
+              "subscriptionPeriod" : "P1W"
+            }
           ],
           "localizations" : [
             {
-              "description" : "Acceso completo durante un año.",
-              "displayName" : "Pro Anual",
-              "locale" : "es_ES"
+              "description" : "Full access for one year.",
+              "displayName" : "Annual Pro",
+              "locale" : "en_US"
             },
             {
-              "description" : "一年完整使用權限。",
-              "displayName" : "年度 Pro",
-              "locale" : "zh_Hant"
-            },
-            {
-              "description" : "1년 동안 전체 이용.",
-              "displayName" : "연간 프로",
-              "locale" : "ko"
-            },
-            {
-              "description" : "Acesso completo por um ano.",
-              "displayName" : "Pro Anual",
-              "locale" : "pt_BR"
-            },
-            {
-              "description" : "Volledige toegang voor één jaar.",
-              "displayName" : "Jaarlijks Pro",
-              "locale" : "nl"
-            },
-            {
-              "description" : "1年間のフルアクセス。",
-              "displayName" : "年間プロ",
-              "locale" : "ja"
+              "description" : "Full access for one year.",
+              "displayName" : "Annual Pro",
+              "locale" : "en_GB"
             },
             {
               "description" : "Full access for one year.",
@@ -145,9 +201,19 @@
               "locale" : "en_US"
             },
             {
-              "description" : "一年完整使用权限。",
-              "displayName" : "年度 Pro",
-              "locale" : "zh_Hans"
+              "description" : "Volledige toegang voor één jaar.",
+              "displayName" : "Jaarlijks Pro",
+              "locale" : "nl"
+            },
+            {
+              "description" : "Volledige toegang voor één jaar.",
+              "displayName" : "Jaarlijks Pro",
+              "locale" : "nl"
+            },
+            {
+              "description" : "Voller Zugang für ein Jahr.",
+              "displayName" : "Jahres-Pro",
+              "locale" : "de"
             },
             {
               "description" : "Voller Zugang für ein Jahr.",
@@ -160,14 +226,84 @@
               "locale" : "it"
             },
             {
+              "description" : "Accesso completo per un anno.",
+              "displayName" : "Pro Annuale",
+              "locale" : "it"
+            },
+            {
               "description" : "Accès complet pendant un an.",
               "displayName" : "Pro Annuel",
               "locale" : "fr"
             },
             {
-              "description" : "Unlock themes, app icons and more for 1 year",
-              "displayName" : "Annual Pro Access",
-              "locale" : "en_US"
+              "description" : "Accès complet pendant un an.",
+              "displayName" : "Pro Annuel",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Acceso completo durante un año.",
+              "displayName" : "Pro Anual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Acceso completo durante un año.",
+              "displayName" : "Pro Anual",
+              "locale" : "es_MX"
+            },
+            {
+              "description" : "Acceso completo durante un año.",
+              "displayName" : "Pro Anual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Acesso completo por um ano.",
+              "displayName" : "Pro Anual",
+              "locale" : "pt_BR"
+            },
+            {
+              "description" : "Acesso completo por um ano.",
+              "displayName" : "Pro Anual",
+              "locale" : "pt_BR"
+            },
+            {
+              "description" : "一年完整使用權限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hant"
+            },
+            {
+              "description" : "一年完整使用权限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hans"
+            },
+            {
+              "description" : "一年完整使用權限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hant"
+            },
+            {
+              "description" : "一年完整使用权限。",
+              "displayName" : "年度 Pro",
+              "locale" : "zh_Hans"
+            },
+            {
+              "description" : "1年間のフルアクセス。",
+              "displayName" : "年間プロ",
+              "locale" : "ja"
+            },
+            {
+              "description" : "1年間のフルアクセス。",
+              "displayName" : "年間プロ",
+              "locale" : "ja"
+            },
+            {
+              "description" : "1년 동안 전체 이용.",
+              "displayName" : "연간 프로",
+              "locale" : "ko"
+            },
+            {
+              "description" : "1년 동안 전체 이용.",
+              "displayName" : "연간 프로",
+              "locale" : "ko"
             }
           ],
           "productID" : "pt_4999_1y_7d0",
@@ -209,9 +345,29 @@
               "locale" : "fr"
             },
             {
+              "description" : "Accès complet, facturé chaque semaine.",
+              "displayName" : "Pro Hebdomadaire",
+              "locale" : "fr"
+            },
+            {
               "description" : "Acceso completo, facturación semanal.",
               "displayName" : "Pro Semanal",
               "locale" : "es_ES"
+            },
+            {
+              "description" : "Acesso completo, cobrado semanalmente.",
+              "displayName" : "Pro Semanal",
+              "locale" : "pt_BR"
+            },
+            {
+              "description" : "Acceso completo, facturación semanal.",
+              "displayName" : "Pro Semanal",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Acceso completo, facturación semanal.",
+              "displayName" : "Pro Semanal",
+              "locale" : "es_MX"
             },
             {
               "description" : "Acesso completo, cobrado semanalmente.",
@@ -224,9 +380,29 @@
               "locale" : "it"
             },
             {
+              "description" : "Accesso completo, fatturato ogni settimana.",
+              "displayName" : "Pro Settimanale",
+              "locale" : "it"
+            },
+            {
               "description" : "Full access, billed weekly.",
               "displayName" : "Weekly Pro",
               "locale" : "en_US"
+            },
+            {
+              "description" : "Full access, billed weekly.",
+              "displayName" : "Weekly Pro",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Full access, billed weekly.",
+              "displayName" : "Weekly Pro",
+              "locale" : "en_GB"
+            },
+            {
+              "description" : "Volledige toegang, wekelijks gefactureerd.",
+              "displayName" : "Wekelijks Pro",
+              "locale" : "nl"
             },
             {
               "description" : "Volledige toegang, wekelijks gefactureerd.",
@@ -239,6 +415,16 @@
               "locale" : "de"
             },
             {
+              "description" : "Voller Zugang, wöchentlich abgerechnet.",
+              "displayName" : "Wöchentlich Pro",
+              "locale" : "de"
+            },
+            {
+              "description" : "每周计费，完整使用权限。",
+              "displayName" : "每周 Pro",
+              "locale" : "zh_Hans"
+            },
+            {
               "description" : "每周计费，完整使用权限。",
               "displayName" : "每周 Pro",
               "locale" : "zh_Hans"
@@ -249,9 +435,24 @@
               "locale" : "zh_Hant"
             },
             {
+              "description" : "每週計費，完整使用權限。",
+              "displayName" : "每週 Pro",
+              "locale" : "zh_Hant"
+            },
+            {
               "description" : "週ごとに請求されるフルアクセス。",
               "displayName" : "週間プロ",
               "locale" : "ja"
+            },
+            {
+              "description" : "週ごとに請求されるフルアクセス。",
+              "displayName" : "週間プロ",
+              "locale" : "ja"
+            },
+            {
+              "description" : "매주 청구되는 전체 이용권.",
+              "displayName" : "주간 프로",
+              "locale" : "ko"
             },
             {
               "description" : "매주 청구되는 전체 이용권.",
@@ -271,8 +472,11 @@
       ]
     }
   ],
+  "subscriptionSuiteGroups" : [
+
+  ],
   "version" : {
-    "major" : 5,
-    "minor" : 0
+    "major" : 6,
+    "minor" : 3
   }
 }
