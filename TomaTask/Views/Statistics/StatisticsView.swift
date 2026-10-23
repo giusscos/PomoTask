@@ -13,7 +13,7 @@ struct StatisticsView: View {
     private let calendar = Calendar.current
 
     private var isSubscribed: Bool {
-        !store.purchasedSubscriptions.isEmpty
+        Store.bypassPaywall || !store.purchasedSubscriptions.isEmpty
     }
 
     private var focusByDay: [Date: TimeInterval] {

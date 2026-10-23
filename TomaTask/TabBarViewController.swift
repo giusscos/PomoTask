@@ -31,7 +31,7 @@ struct TabBarViewController: View {
     }
     
     private var isSubscribed: Bool {
-        !store.purchasedSubscriptions.isEmpty
+        Store.bypassPaywall || !store.purchasedSubscriptions.isEmpty
     }
     
     private var showOnboarding: Binding<Bool> {
@@ -61,9 +61,7 @@ struct TabBarViewController: View {
                 }
                 
                 Tab("Classic", systemImage: "timer", value: .classic) {
-                    NavigationStack {
-                        TomaTasksList()
-                    }
+                    ClassicTabView()
                 }
                 
                 Tab("Settings", systemImage: "gear", value: .settings) {
@@ -72,6 +70,9 @@ struct TabBarViewController: View {
                     }
                 }
             }
+            // Tab bar on compact width; on regular width (iPhone Duo inner display, iPad)
+            // it can expand into a sidebar.
+            .tabViewStyle(.sidebarAdaptable)
         }
         .onAppear {
             UITextField.appearance().clearButtonMode = .whileEditing
@@ -105,7 +106,7 @@ struct TabBarViewController: View {
                 .environment(store)
         }
         .overlay {
-            if store.isLoading {
+            if store.isLoading && !Store.bypassPaywall {
                 ZStack {
                     Color(uiColor: .systemBackground)
                         .ignoresSafeArea()

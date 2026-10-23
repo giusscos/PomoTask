@@ -12,7 +12,10 @@ struct TomaTasksList: View {
     @Environment(\.modelContext) var modelContext
     
     @Query var tomaTasks: [TomaTask]
-    
+
+    /// Set by `ClassicTabView` on regular width: tapping a row opens it in the detail column.
+    var openedTaskID: Binding<PersistentIdentifier?>? = nil
+
     @State private var sheetConfig: EditSheetConfig?
     @State private var selection = Set<PersistentIdentifier>()
     @State private var editMode: EditMode = .inactive
@@ -50,10 +53,16 @@ struct TomaTasksList: View {
                 // Multi-select: tap Select, drag along the circles, or two-finger swipe down the list.
                 List(selection: $selection) {
                     ForEach(tomaTasks, id: \.persistentModelID) { task in
-                        NavigationLink {
-                            TaskView(task: task)
-                        } label: {
-                            TaskRow(task: task)
+                        Group {
+                            if openedTaskID != nil {
+                                TaskRow(task: task)
+                            } else {
+                                NavigationLink {
+                                    TaskView(task: task)
+                                } label: {
+                                    TaskRow(task: task)
+                                }
+                            }
                         }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
@@ -124,7 +133,12 @@ struct TomaTasksList: View {
         }
         .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
         .onChange(of: editMode) { _, mode in
-            if !mode.isEditing { selection.removeAll() }
+            // In the split view a single selection means "opened", so start multi-select empty.
+            if !mode.isEditing || openedTaskID != nil { selection.removeAll() }
+        }
+        .onChange(of: selection) { _, newSelection in
+            guard let openedTaskID, !isSelecting, let id = newSelection.first else { return }
+            openedTaskID.wrappedValue = id
         }
         .onChange(of: tomaTasks.count) { _, count in
             if count == 0 { endSelection() }

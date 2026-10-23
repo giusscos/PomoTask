@@ -25,6 +25,15 @@ class Store {
     private let productIds: [String] = [Store.weeklyID, Store.yearlyID]
     
     let groupId: String = "21571698"
+
+    /// Lets screenshot runs launched outside Xcode (no StoreKit config) reach Pro screens.
+    static var bypassPaywall: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-bypassPaywall")
+        #else
+        return false
+        #endif
+    }
     
     var updateListenerTask : Task<Void, Error>? = nil
     

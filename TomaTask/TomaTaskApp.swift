@@ -20,6 +20,12 @@ struct TomaTaskApp: App {
         do {
             container = try ModelContainer(for: TomaTask.self, Statistics.self)
             container.mainContext.undoManager = UndoManager()
+            #if DEBUG
+            // Seeds demo data for screenshot runs.
+            if ProcessInfo.processInfo.arguments.contains("-seedScreenshotData") {
+                try? ScreenshotDataSeeder.seed(into: container.mainContext)
+            }
+            #endif
         } catch {
             fatalError("Failed to initialize ModelContainer")
         }
